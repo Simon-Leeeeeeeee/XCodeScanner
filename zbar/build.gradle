@@ -1,0 +1,38 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
+
+
+    defaultConfig {
+        minSdkVersion 17
+        targetSdkVersion 26
+        consumerProguardFiles 'consumer-proguard-rules.pro'
+    }
+
+//    def isBuildSo = true
+    def isBuildSo = false
+    if (isBuildSo) { // 构建生成 so 文件
+        sourceSets {
+            main {
+                jniLibs.srcDirs = []
+            }
+        }
+        externalNativeBuild {
+            ndkBuild {
+                path 'src/main/jni/Android.mk'
+            }
+        }
+    } else { // 生成 so 文件后，打包时直接使用生成的 so
+        sourceSets {
+            main {
+                jni.srcDirs = []
+            }
+        }
+        delete(file('.externalNativeBuild'), file('src/main/libs'), file('src/main/obj'))
+    }
+}
+
+dependencies {
+}
