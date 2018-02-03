@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Camera2Scanner.iml" filepath="$PROJECT_DIR$/Camera2Scanner.iml" />
+      <module fileurl="file://F:\Android\workspace\Studio\Camera2Scanner\Camera2Scanner.iml" filepath="F:\Android\workspace\Studio\Camera2Scanner\Camera2Scanner.iml" />
       <module fileurl="file://E:\Android\workspace\Camera2Scanner\Camera2Scanner.iml" filepath="E:\Android\workspace\Camera2Scanner\Camera2Scanner.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/zbar/zbar.iml" filepath="$PROJECT_DIR$/zbar/zbar.iml" />

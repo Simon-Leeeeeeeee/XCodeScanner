@@ -19,7 +19,6 @@ import android.media.ImageReader;
 import android.os.Build;
 import android.os.HandlerThread;
 import android.os.Message;
-import android.renderscript.RenderScript;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -87,7 +86,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private WeakReference<ScannerListener> weakReference;//弱引用，防止内存泄漏
     private final Object lock_Zbar = new Object();//互斥锁
     private final Object lock_Handler = new Object();//互斥锁
-	
+
 //    private RenderScript mRenderScript;
 
     public interface ScannerListener {
