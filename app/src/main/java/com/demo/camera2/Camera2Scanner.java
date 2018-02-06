@@ -86,6 +86,8 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private WeakReference<ScannerListener> weakReference;//弱引用，防止内存泄漏
     private final Object lock_Zbar = new Object();//互斥锁
     private final Object lock_Handler = new Object();//互斥锁
+    private String mResult;
+    private int count;
 
 //    private RenderScript mRenderScript;
 
@@ -112,7 +114,9 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     }
 
     public void detach() {
-        closeCamera();
+        if (mSubHandler != null) {
+            closeCamera();
+        }
         if (mMainHandler != null) {
             synchronized (lock_Handler) {
                 mMainHandler.clear();
@@ -431,9 +435,17 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 break;
             }
             case HANDLER_SUCCESS_RESULT: {
-                if (weakReference.get() != null) {
-                    weakReference.get().scanSuccess((String) msg.obj);
+                if (msg.obj.equals(mResult)) {
+                    count++;
+                    if (count > 2 && weakReference.get() != null) {
+                        weakReference.get().scanSuccess((String) msg.obj);
+                        count = 0;
+                    }
+                } else {
+                    mResult = (String) msg.obj;
+                    count = 0;
                 }
+                Log.d(TAG, getClass().getName() + ".handleMessage() result = " + msg.obj + " , count = " + count);
                 break;
             }
             case HANDLER_FAIL_OPEN:

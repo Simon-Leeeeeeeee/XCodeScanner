@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
@@ -15,13 +16,9 @@ import android.view.View;
  * rectangle and partial transparency outside it, as well as the laser scanner
  * animation and result points.
  */
+@SuppressWarnings("unused")
 public final class ScannerFrameView extends View {
 
-    //画笔
-    private Paint mPaint = new Paint();
-
-    //手机的屏幕密度
-    private float density;
     //扫描框宽
     private int mFrameWidth;
     //扫描框高
@@ -59,8 +56,6 @@ public final class ScannerFrameView extends View {
     private boolean isScanLineVisible;
     //扫描线移动方向
     private int mScanLineDirection;
-    //扫描线轨迹Padding
-    private int mScanLineTrajectoryPadding;
     //扫描线两端Padding
     private int mScanLinePaddingEnd;
     //扫描线长度比例（相对扫描框的宽/高，依方向而定）
@@ -69,17 +64,22 @@ public final class ScannerFrameView extends View {
     private int mScanLineWidth;
     //扫描线颜色
     private int mScanLineColor;
+    //扫描线移动周期（单位毫秒）
+    private int mScanLineCycle;
+
+    //画笔
+    private Paint mPaint = new Paint();
     //扫描线当前偏移量
     private int mCurScanLineOffset;
     //扫描线移动轨迹长度
-    private int mScanLineTrajectory;
-    //扫描线移动频率（单位毫秒）
-    private int mScanLineFrequency;
+    private int mScanLineTrail;
     //扫描线刷新时间间隔（单位毫秒）
-    private int mScanLineInvalidateDelay;
+    private int mScanLineMoveDelay;
 
     //扫描线单次移动距离（单位像素）
-    private static final int STEP_DISTANCE = 5;
+    private static final int ONCE_DISTANCE = 3;
+    //扫描线移动轨迹起止padding（单位像素）
+    private static final int TRAIL_PADDING = 5;
 
     public static class Direction {
         public static final int TOP = 1;
@@ -99,15 +99,15 @@ public final class ScannerFrameView extends View {
     }
 
     private void initView(Context context, AttributeSet attributeSet) {
-        density = context.getResources().getDisplayMetrics().density;
+        float density = context.getResources().getDisplayMetrics().density;
         TypedArray typedArray = context.obtainStyledAttributes(attributeSet, R.styleable.ScannerFrameView);
         this.mFrameWidth = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frame_width, 0);
         this.mFrameHeight = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frame_height, 0);
         this.mFramePaddingTop = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frame_paddingTop, -1);
         if (mFrameWidth <= 0) {
-            this.mFrameWidthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_widthRatio, 0.66666F);
+            this.mFrameWidthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_widthRatio, 0.7F);
             if (mFrameWidthRatio <= 0 || mFrameWidthRatio > 1) {
-                mFrameWidthRatio = 0.66666F;
+                mFrameWidthRatio = 0.7F;
             }
         }
         if (mFrameHeight <= 0) {
@@ -132,9 +132,9 @@ public final class ScannerFrameView extends View {
 
         this.mFrameCornerLength = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frameCorner_length, 0);
         if (mFrameCornerLength <= 0) {
-            this.mFrameCornerLengthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frameCorner_lengthRatio, 0.07143F);
+            this.mFrameCornerLengthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frameCorner_lengthRatio, 0.1F);
             if (mFrameCornerLengthRatio <= 0 || mFrameCornerLengthRatio > 0.5F) {
-                mFrameCornerLengthRatio = 0.07143F;
+                mFrameCornerLengthRatio = 0.1F;
             }
         }
         this.mFrameCornerWidth = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frameCorner_width, (int) (3 * density));
@@ -143,18 +143,16 @@ public final class ScannerFrameView extends View {
         this.isScanLineVisible = typedArray.getBoolean(R.styleable.ScannerFrameView_scanLine_visible, true);
         if (isScanLineVisible) {
             this.mScanLineDirection = typedArray.getInt(R.styleable.ScannerFrameView_scanLine_direction, Direction.BOTTOM);
-            this.mScanLineTrajectoryPadding = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_scanLine_trajectoryPadding, (int) (3 * density));
             this.mScanLinePaddingEnd = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_scanLine_paddingEnd, -1);
             if (mScanLinePaddingEnd < 0) {
-                this.mScanLineLengthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_scanLine_lengthRatio, 0.99F);
+                this.mScanLineLengthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_scanLine_lengthRatio, 0.98F);
                 if (mScanLineLengthRatio <= 0 || mScanLineLengthRatio > 1F) {
-                    mScanLineLengthRatio = 0.99F;
+                    mScanLineLengthRatio = 0.98F;
                 }
             }
-            mScanLinePaddingEnd += mFrameLineWidth;
             this.mScanLineWidth = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_scanLine_width, (int) (2 * density));
             this.mScanLineColor = typedArray.getColor(R.styleable.ScannerFrameView_scanLine_color, Color.BLUE);
-            this.mScanLineFrequency = typedArray.getInt(R.styleable.ScannerFrameView_scanLine_frequency, 1500);
+            this.mScanLineCycle = typedArray.getInt(R.styleable.ScannerFrameView_scanLine_cycle, 1500);
         }
         typedArray.recycle();
     }
@@ -162,6 +160,32 @@ public final class ScannerFrameView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int mMeasuredHeight = getMeasuredHeight();
+        int mMeasuredWidth = getMeasuredWidth();
+        if (mMeasuredWidth > 0 && mMeasuredHeight > 0) {
+            updateFrameRect();
+            updateFrameCornerLength();
+            if (isScanLineVisible) {
+                updateScanLineAttribute();
+            }
+        }
+    }
+
+    private void updateScanLineAttribute() {
+        if (mFrameWidth > 0 && mFrameHeight > 0) {
+            boolean isVerticalDirection = mScanLineDirection == Direction.TOP || mScanLineDirection == Direction.BOTTOM;
+            if (mScanLineLengthRatio > 0 && mScanLineLengthRatio <= 1) {//按比例计算扫描线两端padding
+                int maxLength = isVerticalDirection ? mFrameWidth : mFrameHeight;
+                mScanLinePaddingEnd = (int) (maxLength * (1 - mScanLineLengthRatio) / 2);
+            }
+            int distance = isVerticalDirection ? mFrameHeight : mFrameWidth;
+            mScanLineTrail = distance - TRAIL_PADDING * 2 - mFrameLineWidth * 2 - mScanLineWidth;
+            int stepCount = mScanLineTrail / ONCE_DISTANCE;//总长除以单步距离，此处会有余数。在onDraw中对余数进行处理
+            mScanLineMoveDelay = stepCount > 0 ? (mScanLineCycle / stepCount) : 0;
+        }
+    }
+
+    private void updateFrameRect() {
         int mMeasuredHeight = getMeasuredHeight();
         int mMeasuredWidth = getMeasuredWidth();
         if (mMeasuredWidth > 0 && mMeasuredHeight > 0) {
@@ -177,21 +201,12 @@ public final class ScannerFrameView extends View {
                 mFramePaddingTop = (int) ((mMeasuredHeight - mFrameHeight) * topOffsetRatio);
             }
             mFrameRect.set(leftOffset, mFramePaddingTop, leftOffset + mFrameWidth, mFramePaddingTop + mFrameHeight);
+        }
+    }
 
-            if (mFrameCornerLengthRatio > 0) {//按比例计算扫描框边角长度
-                mFrameCornerLength = (int) (mFrameWidth * mFrameCornerLengthRatio);
-            }
-            if (isScanLineVisible) {
-                if (mScanLineLengthRatio > 0 && mScanLineLengthRatio <= 1) {//按比例计算扫描线两端padding
-                    int maxLength = (mScanLineDirection == Direction.TOP || mScanLineDirection == Direction.BOTTOM) ? mFrameWidth : mFrameHeight;
-                    mScanLinePaddingEnd = (int) (maxLength * (1 - mScanLineLengthRatio) / 2);
-                    mScanLinePaddingEnd += mFrameLineWidth;
-                }
-                int distance = (mScanLineDirection == Direction.TOP || mScanLineDirection == Direction.BOTTOM) ? mFrameHeight : mFrameWidth;
-                mScanLineTrajectory = distance - mScanLineTrajectoryPadding * 2 - mFrameLineWidth * 2 - mScanLineWidth;
-                int stepCount = mScanLineTrajectory / STEP_DISTANCE;//总长除以单步距离，此处会有余数。在onDraw中对余数进行处理
-                mScanLineInvalidateDelay = mScanLineFrequency / stepCount;
-            }
+    private void updateFrameCornerLength() {
+        if (mFrameWidth > 0 && mFrameCornerLengthRatio > 0) {//按比例计算扫描框边角长度
+            mFrameCornerLength = (int) (mFrameWidth * mFrameCornerLengthRatio);
         }
     }
 
@@ -221,46 +236,47 @@ public final class ScannerFrameView extends View {
             canvas.drawRect(mFrameRect.left, mFrameRect.bottom - mFrameLineWidth, mFrameRect.right, mFrameRect.bottom, mPaint);//下边线
         }
 
-        if (isScanLineVisible) {
-            int remainderPadding = (mScanLineTrajectory % STEP_DISTANCE) / 2;//取出起止点的余数，并对余数进行处理
-            if (mCurScanLineOffset < mFrameLineWidth + mScanLineTrajectoryPadding + remainderPadding
-                    || mCurScanLineOffset > mScanLineTrajectory + mFrameLineWidth + mScanLineTrajectoryPadding) {
-                mCurScanLineOffset = mFrameLineWidth + mScanLineTrajectoryPadding + remainderPadding;//超出距离范围，回到起点
+        if (isScanLineVisible && mScanLineMoveDelay > 0) {
+            int remainderPadding = (mScanLineTrail % ONCE_DISTANCE) / 2;//取出起止点的余数，并对余数进行处理
+            if (mCurScanLineOffset < mFrameLineWidth + TRAIL_PADDING + remainderPadding
+                    || mCurScanLineOffset > mScanLineTrail + mFrameLineWidth + TRAIL_PADDING) {
+                mCurScanLineOffset = mFrameLineWidth + TRAIL_PADDING + remainderPadding;//超出距离范围，回到起点
             }
             mPaint.setColor(mScanLineColor);
-            //TODO 根据扫描方向，当前偏移量，计算当次扫描线位置
+            // 根据扫描方向，当前偏移量，确定位置绘制扫描线
+            int realPaddingEnd = mScanLinePaddingEnd + mFrameLineWidth;
             switch (mScanLineDirection) {
                 case Direction.TOP: {
-                    canvas.drawRect(mFrameRect.left + mScanLinePaddingEnd,
+                    canvas.drawRect(mFrameRect.left + realPaddingEnd,
                             mFrameRect.bottom - mCurScanLineOffset - mScanLineWidth,
-                            mFrameRect.right - mScanLinePaddingEnd,
+                            mFrameRect.right - realPaddingEnd,
                             mFrameRect.bottom - mCurScanLineOffset, mPaint);
                     break;
                 }
                 case Direction.BOTTOM: {
-                    canvas.drawRect(mFrameRect.left + mScanLinePaddingEnd,
+                    canvas.drawRect(mFrameRect.left + realPaddingEnd,
                             mFrameRect.top + mCurScanLineOffset,
-                            mFrameRect.right - mScanLinePaddingEnd,
+                            mFrameRect.right - realPaddingEnd,
                             mFrameRect.top + mCurScanLineOffset + mScanLineWidth, mPaint);
                     break;
                 }
                 case Direction.LEFT: {
                     canvas.drawRect(mFrameRect.left + mCurScanLineOffset,
-                            mFrameRect.top + mScanLinePaddingEnd,
+                            mFrameRect.top + realPaddingEnd,
                             mFrameRect.left + mCurScanLineOffset + mScanLineWidth,
-                            mFrameRect.bottom - mScanLinePaddingEnd, mPaint);
+                            mFrameRect.bottom - realPaddingEnd, mPaint);
                     break;
                 }
                 case Direction.RIGHT: {
                     canvas.drawRect(mFrameRect.right - mCurScanLineOffset - mScanLineWidth,
-                            mFrameRect.top + mScanLinePaddingEnd,
+                            mFrameRect.top + realPaddingEnd,
                             mFrameRect.right - mCurScanLineOffset,
-                            mFrameRect.bottom - mScanLinePaddingEnd, mPaint);
+                            mFrameRect.bottom - realPaddingEnd, mPaint);
                     break;
                 }
             }
-            mCurScanLineOffset += STEP_DISTANCE;
-            postInvalidateDelayed(mScanLineInvalidateDelay, mFrameRect.left, mFrameRect.top, mFrameRect.right, mFrameRect.bottom);
+            mCurScanLineOffset += ONCE_DISTANCE;
+            postInvalidateDelayed(mScanLineMoveDelay, mFrameRect.left, mFrameRect.top, mFrameRect.right, mFrameRect.bottom);
         }
 
         //画扫描框四个边角，共八个部分
@@ -275,8 +291,252 @@ public final class ScannerFrameView extends View {
         canvas.drawRect(mFrameRect.right - mFrameCornerWidth, mFrameRect.bottom - mFrameCornerLength, mFrameRect.right, mFrameRect.bottom, mPaint);//右下角竖
     }
 
-    public void setFrameOutsideColor(int frameOutsideColor) {
+    /**
+     * 设置扫描框宽度
+     *
+     * @param frameWidth 宽度，单位pixel，有效区间(0,+∞)
+     */
+    public void setFrameWidth(int frameWidth) {
+        if (frameWidth > 0) {
+            this.mFrameWidth = frameWidth;
+            this.mFrameWidthRatio = 0;
+            updateFrameRect();
+        }
+    }
+
+    /**
+     * 设置扫描宽占比（相对View的宽）
+     *
+     * @param frameWidthRatio 宽占比，有效区间(0,1]
+     */
+    public void setFrameWidthRatio(float frameWidthRatio) {
+        if (frameWidthRatio > 0 && frameWidthRatio <= 1) {
+            this.mFrameWidthRatio = frameWidthRatio;
+            updateFrameRect();
+        }
+    }
+
+    /**
+     * 设置扫描框高度
+     *
+     * @param frameHeight 高度，单位pixel，有效区间(0,+∞)
+     */
+    public void setFrameHeight(int frameHeight) {
+        if (frameHeight > 0) {
+            this.mFrameHeight = frameHeight;
+            this.mFrameHWRatio = 0;
+            updateFrameRect();
+        }
+    }
+
+    /**
+     * 设置扫描框高宽比（相对扫描框的宽）
+     *
+     * @param frameHWRatio 高宽比(height/width)，有效区间(0,+∞)
+     */
+    public void setFrameHWRatio(float frameHWRatio) {
+        if (frameHWRatio > 0) {
+            this.mFrameHWRatio = frameHWRatio;
+            updateFrameRect();
+        }
+    }
+
+    /**
+     * 设置扫描框的上边距
+     *
+     * @param framePaddingTop 上边距，单位pixel，有效区间[0,+∞)
+     */
+    public void setFramePaddingTop(int framePaddingTop) {
+        if (framePaddingTop >= 0) {
+            this.mFramePaddingTop = framePaddingTop;
+            this.mFrameVerticalPaddingRatio = 0;
+            updateFrameRect();
+        }
+    }
+
+    /**
+     * 设置扫描框上边距和下边距的比例
+     *
+     * @param frameVerticalPaddingRatio 上下边距比值，有效区间(0,+∞)
+     */
+    public void setFrameVerticalPaddingRatio(float frameVerticalPaddingRatio) {
+        if (frameVerticalPaddingRatio > 0) {
+            this.mFrameVerticalPaddingRatio = frameVerticalPaddingRatio;
+            updateFrameRect();
+        }
+    }
+
+    /**
+     * 设置扫描框外部填充色
+     *
+     * @param frameOutsideColor 十六进制色值
+     */
+    public void setFrameOutsideColor(@ColorInt int frameOutsideColor) {
         this.mFrameOutsideColor = frameOutsideColor;
+    }
+
+    /**
+     * 设置是否显示扫描框边线
+     *
+     * @param frameLineVisible true:显示，false:隐藏
+     */
+    public void setFrameLineVisible(boolean frameLineVisible) {
+        this.isFrameLineVisible = frameLineVisible;
+    }
+
+    /**
+     * 设置扫描框边线的宽度
+     *
+     * @param frameLineWidth 扫描线宽度，单位pixel，有效区间(0,+∞)
+     */
+    public void setFrameLineWidth(int frameLineWidth) {
+        if (frameLineWidth > 0) {
+            this.mFrameLineWidth = frameLineWidth;
+            updateScanLineAttribute();
+        }
+    }
+
+    /**
+     * 设置扫描框边线的颜色
+     *
+     * @param frameLineColor 十六进制色值
+     */
+    public void setFrameLineColor(@ColorInt int frameLineColor) {
+        this.mFrameLineColor = frameLineColor;
+    }
+
+    /**
+     * 设置扫描框边角长度
+     *
+     * @param frameCornerLength 扫描框边角长度，单位pixel，有效区间(0,+∞)
+     */
+    public void setFrameCornerLength(int frameCornerLength) {
+        if (frameCornerLength > 0) {
+            this.mFrameCornerLength = frameCornerLength;
+            this.mFrameCornerLengthRatio = 0;
+        }
+    }
+
+    /**
+     * 设置扫描框边角长占比（相对扫描框的宽）
+     *
+     * @param frameCornerLengthRatio 扫描框边角长占比，有效区间(0,0.5]
+     */
+    public void setframeCornerLengthRatio(float frameCornerLengthRatio) {
+        if (frameCornerLengthRatio > 0 && frameCornerLengthRatio <= 0.5F) {
+            this.mFrameCornerLengthRatio = frameCornerLengthRatio;
+            updateFrameCornerLength();
+        }
+    }
+
+    /**
+     * 设置扫描框边角宽度
+     *
+     * @param frameCornerWidth 扫描框边角宽度，单位pixel，有效区间(0,+∞)
+     */
+    public void setFrameCornerWidth(int frameCornerWidth) {
+        if (frameCornerWidth > 0) {
+            this.mFrameCornerWidth = frameCornerWidth;
+        }
+    }
+
+    /**
+     * 设置扫描框边角颜色
+     *
+     * @param frameCornerColor 十六进制色值
+     */
+    public void setFrameCornerColor(@ColorInt int frameCornerColor) {
+        this.mFrameCornerColor = frameCornerColor;
+    }
+
+    /**
+     * 设置是否显示扫描线
+     *
+     * @param scanLineVisible true:显示，false:隐藏
+     */
+    public void setScanLineVisible(boolean scanLineVisible) {
+        this.isScanLineVisible = scanLineVisible;
+    }
+
+    /**
+     * 设置扫描线移动方向
+     *
+     * @param scanLineDirection Direction.TOP:从下往上
+     *                          Direction.BOTTOM:从上往下
+     *                          Direction.LEFT:从右往左
+     *                          Direction.RIGHT:从左往右
+     */
+    public void setScanLineDirection(int scanLineDirection) {
+        switch (scanLineDirection) {
+            case Direction.TOP:
+            case Direction.BOTTOM:
+            case Direction.LEFT:
+            case Direction.RIGHT: {
+                this.mScanLineDirection = scanLineDirection;
+                updateScanLineAttribute();
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+
+    /**
+     * 设置扫描线宽度
+     *
+     * @param scanLineWidth 扫描线宽度，单位pixel，有效区间(0,+∞)
+     */
+    public void setScanLineWidth(int scanLineWidth) {
+        if (scanLineWidth > 0) {
+            this.mScanLineWidth = scanLineWidth;
+            updateScanLineAttribute();
+        }
+    }
+
+    /**
+     * 设置扫描线两端Padding（相对于扫描框）
+     *
+     * @param scanLinePaddingEnd 扫描线两端Padding，单位pixel，有效区间(0,+∞)
+     */
+    public void setScanLinePaddingEnd(int scanLinePaddingEnd) {
+        if (scanLinePaddingEnd >= 0) {
+            this.mScanLinePaddingEnd = scanLinePaddingEnd;
+            this.mScanLineLengthRatio = 0;
+        }
+    }
+
+    /**
+     * 设置扫描线长占比（相对扫描框的宽/高，依扫描方向而定）
+     *
+     * @param scanLineLengthRatio 扫描线长占比，有效区间(0,1]
+     */
+    public void setScanLineLengthRatio(float scanLineLengthRatio) {
+        if (scanLineLengthRatio > 0 && scanLineLengthRatio <= 1F) {
+            this.mScanLineLengthRatio = scanLineLengthRatio;
+            updateScanLineAttribute();
+        }
+    }
+
+    /**
+     * 设置扫描线颜色
+     *
+     * @param scanLineColor 十六进制色值
+     */
+    public void setScanLineColor(@ColorInt int scanLineColor) {
+        this.mScanLineColor = scanLineColor;
+    }
+
+    /**
+     * 设置扫描线移动周期
+     *
+     * @param scanLineCycle 周期，单位msec，有效区间(0,+∞)
+     */
+    public void setScanLineCycle(int scanLineCycle) {
+        if (scanLineCycle > 0) {
+            this.mScanLineCycle = scanLineCycle;
+            updateScanLineAttribute();
+        }
     }
 
 }
