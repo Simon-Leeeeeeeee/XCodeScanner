@@ -6,7 +6,7 @@
 * [更新计划](#更新计划)
 * [版本记录](#版本记录)
 
-## 介绍
+## 功能介绍
 Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，要求<font color=#0366d6>SDK21</font>及以上。 
 
 -  使用camera2API
