@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Camera2</string>
+    <string name="tips_scan">将二维码/条码放入框内，即可自动扫描</string>
 </resources>

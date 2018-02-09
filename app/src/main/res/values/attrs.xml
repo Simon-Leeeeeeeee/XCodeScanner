@@ -1,56 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="ScannerFrameView">
-        <!-- 扫描框的宽 -->
-        <attr name="frame_width" format="dimension|reference" />
-        <!-- 扫描框的高 -->
-        <attr name="frame_height" format="dimension|reference" />
-        <!-- 扫描框宽占比(相对整个View) -->
-        <attr name="frame_widthRatio" format="float|reference" />
-        <!-- 扫描框高宽比(相对自身宽度) -->
-        <attr name="frame_hwRatio" format="float|reference" />
-        <!-- 扫描框上边距 -->
-        <attr name="frame_paddingTop" format="dimension|reference" />
-        <!-- 扫描框上下边距比(上边距/下边距) -->
-        <attr name="frame_verticalPaddingRatio" format="float|reference" />
-        <!-- 扫描框外部颜色 -->
-        <attr name="frame_outsideColor" format="color|reference" />
-
-        <!-- 扫描框边线是否显示 -->
+        <!-- 边框是否显示 -->
         <attr name="frameLine_visible" format="boolean|reference" />
-        <!-- 扫描框边线宽度 -->
+        <!-- 边框宽度 -->
         <attr name="frameLine_width" format="dimension|reference" />
-        <!-- 扫描框边线颜色 -->
+        <!-- 边框颜色 -->
         <attr name="frameLine_color" format="color|reference" />
 
-        <!-- 扫描框边角长度 -->
+        <!-- 边角是否显示 -->
+        <attr name="frameCorner_visible" format="boolean|reference" />
+        <!-- 边角长度 -->
         <attr name="frameCorner_length" format="dimension|reference" />
-        <!-- 扫描框边角长占比（相对扫描框宽度） -->
+        <!-- 边角长占比（相对自身宽度） -->
         <attr name="frameCorner_lengthRatio" format="float|reference" />
-        <!-- 扫描框边角宽度 -->
+        <!-- 边角宽度 -->
         <attr name="frameCorner_width" format="dimension|reference" />
-        <!-- 扫描框边角颜色 -->
+        <!-- 边角颜色 -->
         <attr name="frameCorner_color" format="color|reference" />
 
         <!-- 扫描线是否显示 -->
         <attr name="scanLine_visible" format="boolean|reference" />
-        <!-- 扫描线方向 -->
+        <!-- 扫描线运动方向 -->
         <attr name="scanLine_direction">
             <enum name="top" value="1" />
             <enum name="bottom" value="2" />
             <enum name="left" value="3" />
             <enum name="right" value="4" />
         </attr>
-        <!-- 扫描线两端padding -->
-        <attr name="scanLine_paddingEnd" format="dimension|reference" />
+        <!-- 扫描线长度padding -->
+        <attr name="scanLine_lengthPadding" format="dimension|reference" />
         <!-- 扫描线长占比（相对扫描框宽/高，依方向而定） -->
         <attr name="scanLine_lengthRatio" format="float|reference" />
         <!-- 扫描线宽度 -->
         <attr name="scanLine_width" format="dimension|reference" />
         <!-- 扫描线颜色 -->
         <attr name="scanLine_color" format="color|reference" />
-        <!-- 扫描线移动周期（单位毫秒） -->
-        <attr name="scanLine_cycle" format="integer|reference" />
+        <!-- 扫描周期（单位毫秒） -->
+        <attr name="scan_cycle" format="integer|reference" />
+    </declare-styleable>
+
+    <declare-styleable name="ScannerFrameLayout">
+        <!-- 扫描框宽占比(相对整个View) -->
+        <attr name="frame_widthRatio" format="float|reference" />
+        <!-- 扫描框高宽比(相对自身宽度) -->
+        <attr name="frame_hwRatio" format="float|reference" />
+        <!-- 扫描框上下Margin比 -->
+        <attr name="frame_verticalMarginRatio" format="float|reference" />
+        <!-- 扫描框外部颜色 -->
+        <attr name="frame_outsideColor" format="color|reference" />
 
     </declare-styleable>
+
 </resources>

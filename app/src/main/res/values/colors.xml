@@ -4,6 +4,8 @@
     <color name="white_translucent">#EEFFFFFF</color>
 
     <color name="black">#000000</color>
+    <color name="gray2">#80898989</color>
+    <color name="gray">#AFAFAF</color>
 
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>

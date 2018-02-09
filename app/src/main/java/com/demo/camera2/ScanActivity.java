@@ -17,7 +17,7 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Sc
 
     private Camera2Scanner mCameraScanner;
 
-    private final String TAG = "LXM-Camera2";
+    private final String TAG = "Camera2";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

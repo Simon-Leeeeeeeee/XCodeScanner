@@ -77,7 +77,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private volatile ImageScanner mImageScanner;
     private ExecutorService mExecutorService;
 
-    private final String TAG = "LXM-Camera2";
+    private final String TAG = "Camera2Scanner";
     private String mCameraId;
     private Size mPreviewSize;
     private BaseHandler mSubHandler;//子线程Handler
