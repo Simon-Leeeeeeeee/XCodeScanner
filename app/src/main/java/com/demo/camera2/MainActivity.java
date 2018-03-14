@@ -6,6 +6,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+/**
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
+ */
+
 public class MainActivity extends AppCompatActivity {
 
     @Override

@@ -1,5 +1,6 @@
 package com.demo.camera2;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -9,6 +10,12 @@ import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
+
+/**
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
+ */
 
 @SuppressWarnings("unused")
 public final class ScannerFrameView extends View {
@@ -72,7 +79,6 @@ public final class ScannerFrameView extends View {
      */
     private int mScanLineDirection;
 
-
     /**
      * 扫描线长度Padding
      * 与{@link #mScanLineLengthRatio}不兼容，以{@link #isMeasureScanLineLengthByRatio}判断
@@ -108,24 +114,19 @@ public final class ScannerFrameView extends View {
     private int mScanCycle;
 
     /**
-     * 扫描线移动间隔时间（单位毫秒）
+     * 扫描线移动轨迹起点
      */
-    private int mMoveDelay;
+    private int mTrailStart;
+
+    /**
+     * 扫描线移动轨迹终点
+     */
+    private int mTrailEnd;
 
     /**
      * 扫描线当前移动偏移量
      */
     private int mCurMoveOffset;
-
-    /**
-     * 扫描线移动轨迹与View本身的Margin（相对View本身的边界）
-     */
-    private int mTrailMargin;
-
-    /**
-     * 扫描线单次移动距离（单位像素）
-     */
-    private static final int SINGLE_DISTANCE = 3;
 
     /**
      * 扫描线移动轨迹与边框的Margin（相对边框的内边界）
@@ -137,12 +138,15 @@ public final class ScannerFrameView extends View {
      */
     private Paint mPaint = new Paint();
 
-    public static class Direction {
-        public static final int TOP = 1;
-        public static final int BOTTOM = 2;
-        public static final int LEFT = 3;
-        public static final int RIGHT = 4;
-    }
+    /**
+     * 扫描动画
+     */
+    private ValueAnimator mScanAnimator;
+
+    public static final int DIRECTION_TOP = 1;
+    public static final int DIRECTION_BOTTOM = 2;
+    public static final int DIRECTION_LEFT = 3;
+    public static final int DIRECTION_RIGHT = 4;
 
     public ScannerFrameView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -172,7 +176,7 @@ public final class ScannerFrameView extends View {
         this.mFrameCornerColor = typedArray.getColor(R.styleable.ScannerFrameView_frameCorner_color, Color.BLUE);
 
         this.isScanLineVisible = typedArray.getBoolean(R.styleable.ScannerFrameView_scanLine_visible, true);
-        this.mScanLineDirection = typedArray.getInt(R.styleable.ScannerFrameView_scanLine_direction, Direction.BOTTOM);
+        this.mScanLineDirection = typedArray.getInt(R.styleable.ScannerFrameView_scanLine_direction, DIRECTION_BOTTOM);
         this.mScanLineLengthPadding = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_scanLine_lengthPadding, -1);
         if (mScanLineLengthPadding < 0) {
             this.isMeasureScanLineLengthByRatio = true;
@@ -198,10 +202,9 @@ public final class ScannerFrameView extends View {
             measureFrameCornerLength();//计算边角长度
         }
         if (isScanLineVisible) {
-            boolean isVerticalDirection = mScanLineDirection != Direction.LEFT && mScanLineDirection != Direction.RIGHT;//垂直上下扫描
-            //下面两个方法顺序不能换，如果扫描线长度为0，会将扫描间隔时间置0
-            measureScanLineMoveParameter(isVerticalDirection);//计算扫描线移动参数
+            boolean isVerticalDirection = mScanLineDirection != DIRECTION_LEFT && mScanLineDirection != DIRECTION_RIGHT;//是否为垂直上下扫描
             measureScanLineLengthPadding(isVerticalDirection);//计算扫描线长度Padding
+            updateScanAnimator(isVerticalDirection);
         }
     }
 
@@ -220,17 +223,6 @@ public final class ScannerFrameView extends View {
         }
     }
 
-    private void measureScanLineMoveParameter(boolean isVerticalDirection) {
-        int maxDistance = isVerticalDirection ? getMeasuredHeight() : getMeasuredWidth();//根据移动方向得到最大移动距离
-        if (maxDistance <= 0) {
-            return;
-        }
-        int trailLength = maxDistance - (TRAIL_MARGIN_FRAME + mFrameLineWidth) * 2 - mScanLineWidth;//计算出扫描线移动轨迹的长度
-        int stepCount = trailLength / SINGLE_DISTANCE;//轨迹长度除以单步距离计算出一个循环内的移动次数
-        mMoveDelay = stepCount > 0 ? (mScanCycle / stepCount) : 0;//计算出每次移动间隔时间
-        mTrailMargin = TRAIL_MARGIN_FRAME + mFrameLineWidth + (trailLength % SINGLE_DISTANCE) / 2;//扫描线移动轨迹与View的Padding距离
-    }
-
     private void measureScanLineLengthPadding(boolean isVerticalDirection) {
         int maxLength = isVerticalDirection ? getMeasuredWidth() : getMeasuredHeight();//根据移动方向得到最大长度
         if (maxLength <= 0) {
@@ -241,8 +233,53 @@ public final class ScannerFrameView extends View {
         }
         if (mScanLineLengthPadding < 0) {//扫描线最大长度为maxLength，因此padding最小为0
             mScanLineLengthPadding = 0;
-        } else if (maxLength <= mScanLineLengthPadding * 2) {//扫描线长度为0，不需要绘制扫描线，将移动间隔置0
-            mMoveDelay = 0;
+        }
+    }
+
+    private void updateScanAnimator(boolean isVerticalDirection) {
+        if (mScanCycle <= 0 || mScanLineWidth <= 0) {
+            cancelScanAnimator();
+        } else {
+            int maxDistance = isVerticalDirection ? getMeasuredHeight() : getMeasuredWidth();//根据移动方向得到最大移动距离
+            int trailStart = TRAIL_MARGIN_FRAME + mFrameLineWidth;
+            int trailEnd = maxDistance - trailStart - mScanLineWidth;
+            if (trailStart < trailEnd) {
+                startScanAnimator(trailStart, trailEnd);
+            } else {
+                cancelScanAnimator();
+            }
+        }
+    }
+
+    private void startScanAnimator(int start, int end) {
+        mTrailStart = start;
+        mTrailEnd = end;
+        if (mScanAnimator == null) {
+            mScanAnimator = new ValueAnimator();
+            mScanAnimator.setIntValues(start, end);
+            mScanAnimator.setDuration(mScanCycle);
+            mScanAnimator.setRepeatCount(ValueAnimator.INFINITE);
+            mScanAnimator.setInterpolator(new LinearInterpolator());
+            mScanAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    mCurMoveOffset = (int) animation.getAnimatedValue();
+                    invalidate();
+                }
+            });
+            mScanAnimator.start();
+        } else {
+            mScanAnimator.setIntValues(start, end);
+        }
+    }
+
+    private void cancelScanAnimator() {
+        mTrailStart = 0;
+        mTrailEnd = 0;
+        if (mScanAnimator != null) {
+            mScanAnimator.removeAllUpdateListeners();
+            mScanAnimator.cancel();
+            mScanAnimator = null;
         }
     }
 
@@ -274,33 +311,34 @@ public final class ScannerFrameView extends View {
         }
 
         //画扫描线
-        if (isScanLineVisible && mMoveDelay > 0 && mScanLineWidth > 0) {
-            boolean isVerticalDirection = mScanLineDirection != Direction.LEFT && mScanLineDirection != Direction.RIGHT;//垂直上下扫描
-            if (mCurMoveOffset < mTrailMargin || mCurMoveOffset > (isVerticalDirection ? height : width) - mTrailMargin - mScanLineWidth) {
-                mCurMoveOffset = mTrailMargin;//超出距离范围，回到起点
-            }
+        if (isScanLineVisible && mScanLineWidth > 0 && mTrailStart < mTrailEnd && mCurMoveOffset >= mTrailStart && mCurMoveOffset <= mTrailEnd) {
+            mPaint.setColor(mScanLineColor);
             // 根据扫描方向，当前偏移量，确定位置绘制扫描线
             switch (mScanLineDirection) {
-                case Direction.TOP: {//从下往上
+                case DIRECTION_TOP: {//从下往上
                     canvas.drawRect(mScanLineLengthPadding, height - mCurMoveOffset - mScanLineWidth, width - mScanLineLengthPadding, height - mCurMoveOffset, mPaint);
                     break;
                 }
-                case Direction.BOTTOM: {//从上往下
+                case DIRECTION_BOTTOM: {//从上往下
                     canvas.drawRect(mScanLineLengthPadding, mCurMoveOffset, width - mScanLineLengthPadding, mCurMoveOffset + mScanLineWidth, mPaint);
                     break;
                 }
-                case Direction.LEFT: {//从右往左
+                case DIRECTION_LEFT: {//从右往左
                     canvas.drawRect(mCurMoveOffset, mScanLineLengthPadding, mCurMoveOffset + mScanLineWidth, height - mScanLineLengthPadding, mPaint);
                     break;
                 }
-                case Direction.RIGHT: {//从左往右
+                case DIRECTION_RIGHT: {//从左往右
                     canvas.drawRect(width - mCurMoveOffset - mScanLineWidth, mScanLineLengthPadding, width - mCurMoveOffset, height - mScanLineLengthPadding, mPaint);
                     break;
                 }
             }
-            mCurMoveOffset += SINGLE_DISTANCE;
-            postInvalidateDelayed(mMoveDelay);
         }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        cancelScanAnimator();
+        super.onDetachedFromWindow();
     }
 
     /**
@@ -389,17 +427,17 @@ public final class ScannerFrameView extends View {
     /**
      * 设置扫描线移动方向
      *
-     * @param scanLineDirection Direction.TOP:从下往上
-     *                          Direction.BOTTOM:从上往下
-     *                          Direction.LEFT:从右往左
-     *                          Direction.RIGHT:从左往右
+     * @param scanLineDirection DIRECTION_TOP:从下往上
+     *                          DIRECTION_BOTTOM:从上往下
+     *                          DIRECTION_LEFT:从右往左
+     *                          DIRECTION_RIGHT:从左往右
      */
     public void setScanLineDirection(int scanLineDirection) {
         switch (scanLineDirection) {
-            case Direction.TOP:
-            case Direction.BOTTOM:
-            case Direction.LEFT:
-            case Direction.RIGHT: {
+            case DIRECTION_TOP:
+            case DIRECTION_BOTTOM:
+            case DIRECTION_LEFT:
+            case DIRECTION_RIGHT: {
                 this.mScanLineDirection = scanLineDirection;
                 break;
             }
@@ -454,11 +492,13 @@ public final class ScannerFrameView extends View {
      */
     public void setScanLineCycle(int scanLineCycle) {
         this.mScanCycle = scanLineCycle;
-    }
-
-    @Override
-    public void invalidate() {
-        super.invalidate();
+        if (mScanAnimator != null) {
+            long curPlayTime = mScanAnimator.getCurrentPlayTime();
+            long curDuration = mScanAnimator.getDuration();
+            long newPlayTime = curPlayTime / curDuration * scanLineCycle;
+            mScanAnimator.setDuration(scanLineCycle);
+            mScanAnimator.setCurrentPlayTime(newPlayTime);
+        }
     }
 
 }

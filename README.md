@@ -19,6 +19,14 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 -  增加Zxing支持。
 
 ## 版本记录
+-  V1.0.2   `2018/03/14`
+
+    1. 新增抽象类`GraphicDecoder`，将条码解析模块进行抽离。
+    2. 新增`ZBarDecoder`，采用ZBar解析条码，并增加解析类型及解析精度设置。
+    3. 修改`ScannerFrameView`，扫描线动画由属性动画实现。
+    4. 修改`Camera2Scanner`，修复释放相机可能导致的异常，增加扫描框区域设置。
+    5. 其他微调。
+
 -  V1.0.1   `2018/02/09`
 
     1. 新增`ScannerFrameLayout`，为`RelativeLayout`的子类，可对扫描框的位置和大小进行设置。

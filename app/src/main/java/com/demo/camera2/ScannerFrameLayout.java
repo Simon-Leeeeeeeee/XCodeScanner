@@ -12,6 +12,11 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.RelativeLayout;
 
+/**
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
+ */
+
 @SuppressWarnings("unused")
 public class ScannerFrameLayout extends RelativeLayout {
 

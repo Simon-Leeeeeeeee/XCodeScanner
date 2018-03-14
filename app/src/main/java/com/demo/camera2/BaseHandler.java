@@ -7,8 +7,10 @@ import android.os.Message;
 import java.lang.ref.WeakReference;
 
 /**
- * Created by LiXiaomeng on 2017-09-14.
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
  */
+
 public class BaseHandler extends Handler {
 
     private WeakReference<BaseHandlerListener> weakReference;
@@ -24,7 +26,12 @@ public class BaseHandler extends Handler {
 
     @Override
     public void handleMessage(Message msg) {
-        if (this.weakReference.get() != null) this.weakReference.get().handleMessage(msg);
+        if (this.weakReference != null) {
+            BaseHandlerListener listener = weakReference.get();
+            if (listener != null) {
+                listener.handleMessage(msg);
+            }
+        }
     }
 
     public void removeAll() {

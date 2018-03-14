@@ -5,9 +5,10 @@ import android.support.annotation.StringRes;
 import android.widget.Toast;
 
 /**
- * ToastHelper
- * Created by LiXiaomeng on 2018-01-09.
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
  */
+
 @SuppressWarnings("unused")
 @SuppressLint("ShowToast")
 public class ToastHelper {

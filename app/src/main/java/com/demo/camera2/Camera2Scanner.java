@@ -4,8 +4,8 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.ImageFormat;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -24,47 +24,44 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
+import android.view.WindowManager;
 
-import net.sourceforge.zbar.Config;
-import net.sourceforge.zbar.ImageScanner;
-import net.sourceforge.zbar.Symbol;
-import net.sourceforge.zbar.SymbolSet;
-
-import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
- * @author lixiaomeng
- * @WeChat 13510219066
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
+ * <p>
  * 坑
  * 1.使用旧CameraAPI，mCamera.setAutoFocusMoveCallback(...)在有些设备上并不能很好地自动对焦。原因：未知，可能是碎片化导致。解决：无法解决
  * 2.换用新camera2API,适用于android5.0及以上。
- * 3.图像出现锯齿，且变形严重。原因：未调用mSurfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+ * 3.图像出现锯齿，且变形严重。原因：未调用mSurfaceTexture.setDefaultBufferSize(mSurfaceSize.getWidth(), mSurfaceSize.getHeight());
  * 4.无实时byte[]数据。原因：未调用mPreviewBuilder.addTarget(mImageReader.getSurface());
  * 5.实时byte[]数据获取导致严重丢帧。原因：未知，可能是mImageReader解析数据阻塞线程。解决：调整mImageReader尺寸，使像素密度小于75W
  * 6.无法正确解析结果。原因：a.原始数据格式为YUV，目标格式为Y8。应舍弃UV分量，仅传入Y分量灰度图。b.目标size不应为mPreviewSize
  * <p>
  * 后续...
  * 问题5只是治标不治本，也许还能通过更好的办法获取byte[]
+ * a.使用new Surface(new SurfaceTexture(textureID)); 监听onFrameAvailable 获得纹理。
+ * 存在问题：纹理是个啥？怎么获得YUV分量中的Y。
+ * b.在onSurfaceTextureUpdated中通过TextureView获取bitmap，转YUV。
+ * c.RenderScript，无法解决。与ImageReader同样会降低FPS，参照createAllcation()。
+ * d.待发现...
  */
 
 @SuppressWarnings("unused")
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
 
-    private final int HANDLER_SUCCESS_OPEN = 80001;
-    private final int HANDLER_SUCCESS_RESULT = 80002;
-    private final int HANDLER_FAIL_OPEN = 90002;
-    private final int HANDLER_FAIL_CONFIG = 90003;
-    private final int HANDLER_FAIL_DISCONNECTED = 90004;
-    private final int HANDLER_FAIL_NO_PERMISSION = 90005;
+    private final int HANDLER_SUCCESS_OPEN = 70001;
+    private final int HANDLER_FAIL_OPEN = 80002;
+    private final int HANDLER_FAIL_CONFIG = 80003;
+    private final int HANDLER_FAIL_DISCONNECTED = 80004;
+    private final int HANDLER_FAIL_NO_PERMISSION = 80005;
+
+    private final Context mContext;
 
     private SurfaceTexture mSurfaceTexture;
 
@@ -73,247 +70,269 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private CameraCaptureSession mCaptureSession;
     private CaptureRequest.Builder mPreviewBuilder;
 
-    private ImageReader mImageReader;
-    private volatile ImageScanner mImageScanner;
-    private ExecutorService mExecutorService;
+    private GraphicDecoder mGraphicDecoder;//由Activity创建，持有Activity对象。仅用于解析数据
 
     private final String TAG = "Camera2Scanner";
-    private String mCameraId;
-    private Size mPreviewSize;
+
+    private int mOrientation;//屏幕方向 0 朝上 1朝左 2朝下 3朝右
+
+    private String mCameraId;//相机ID
+    private Size mPreviewSize;//预览尺寸
+    private Size mSurfaceSize;//Surface尺寸
+    private RectF mFrameRatioRect;//扫码框区域相对于预览尺寸所占比例，且已根据mOrientation做校正
+
     private BaseHandler mSubHandler;//子线程Handler
-    private volatile BaseHandler mMainHandler;//主线程Handler
+    private BaseHandler mMainHandler;//主线程Handler
 
-    private WeakReference<ScannerListener> weakReference;//弱引用，防止内存泄漏
-    private final Object lock_Zbar = new Object();//互斥锁
-    private final Object lock_Handler = new Object();//互斥锁
-    private String mResult;
-    private int count;
+    private ImageReader mImageReader;//用于获取帧数据
+    private boolean mImageReaderEnable = true;//是否启用ImageReader获取帧数据
+    private long mImageReaderSuitPixels = 750000L;//ImageReader的最大尺寸
 
-//    private RenderScript mRenderScript;
+    private CameraDeviceListener mCameraDeviceListener;//相机设备回调
 
-    public interface ScannerListener {
+    public interface CameraDeviceListener {
 
         void openCameraError();
 
-        void openCameraSuccess(int width, int height);
-
-        void scanSuccess(String result);
+        void openCameraSuccess(int surfaceWidth, int surfaceHeight, int orientation);
 
         void noCameraPermission();
 
         void cameraDisconnected();
     }
 
-    public Camera2Scanner(ScannerListener ScannerListener) {
+    public Camera2Scanner(Context context) {
+        this.mContext = context;
         HandlerThread handlerThread = new HandlerThread("Camera2Scanner");
         handlerThread.start();
         this.mMainHandler = new BaseHandler(this);
         this.mSubHandler = new BaseHandler(null, handlerThread.getLooper());
-//        this.mMainHandler = new BaseHandler(this,APP.getApp().getMainLooper());
-        this.weakReference = new WeakReference<>(ScannerListener);
     }
 
-    public void detach() {
-        if (mSubHandler != null) {
-            closeCamera();
-        }
-        if (mMainHandler != null) {
-            synchronized (lock_Handler) {
-                mMainHandler.clear();
-                mMainHandler = null;
-            }
-        }
-        if (weakReference != null) {
-            weakReference.clear();
-            weakReference = null;
-        }
+    /**
+     * 设置相机设备监听器
+     */
+    public void setCameraDeviceListener(CameraDeviceListener cameraDeviceListener) {
+        this.mCameraDeviceListener = cameraDeviceListener;
     }
 
+    /**
+     * 设置图像解码器
+     */
+    public void setGraphicDecoder(GraphicDecoder graphicDecoder) {
+        this.mGraphicDecoder = graphicDecoder;
+    }
+
+    /**
+     * 设置SurfaceHolder
+     */
     public void setSurfaceHolder(SurfaceTexture surfaceTexture) {
         this.mSurfaceTexture = surfaceTexture;
     }
 
-    public void openCamera(final int width, final int height) {
-//      mRenderScript = renderScript;
+    /**
+     * 设置预览View的尺寸
+     */
+    public void setPreviewSize(int width, int height) {
+        mPreviewSize = new Size(width, height);
+        Log.d(TAG, getClass().getName() + ".setPreviewSize() mPreviewSize = " + mPreviewSize.toString());
+    }
+
+    /**
+     * 设置扫码框区域相对于mPreviewSize的宽高比，且根据屏幕方向进行校正
+     */
+    public void setFrameRatioRect(int left, int top, int right, int bottom) {
+        if (mPreviewSize == null) return;
+        float width = mPreviewSize.getWidth();
+        float height = mPreviewSize.getHeight();
+        if (mFrameRatioRect == null) {
+            mFrameRatioRect = new RectF(1, 1, 1, 1);
+        }
+        float leftRatio = left / width;
+        float rightRatio = right / width;
+        float topRatio = top / height;
+        float bottomRatio = bottom / height;
+        switch (mOrientation) {
+            case Surface.ROTATION_0: {
+                mFrameRatioRect.set(topRatio, 1 - rightRatio, bottomRatio, 1 - leftRatio);
+                break;
+            }
+            case Surface.ROTATION_90: {
+                mFrameRatioRect.set(leftRatio, topRatio, rightRatio, bottomRatio);
+                break;
+            }
+            case Surface.ROTATION_180: {
+                mFrameRatioRect.set(1 - bottomRatio, leftRatio, 1 - topRatio, rightRatio);
+                break;
+            }
+            case Surface.ROTATION_270: {
+                mFrameRatioRect.set(1 - rightRatio, 1 - bottomRatio, 1 - leftRatio, 1 - topRatio);
+                break;
+            }
+        }
+        Log.d(TAG, getClass().getName() + ".setFrameRatioRect() mFrameRatioRect = " + mFrameRatioRect);
+    }
+
+    /**
+     * 设置ImageReader的最大尺寸，在openCamera后设置无效
+     */
+    public void setImageReaderSuitPixels(long suitPixels) {
+        this.mImageReaderSuitPixels = suitPixels;
+    }
+
+    /**
+     * 设置是否启用ImageReader获取帧数据，在openCamera后设置无效
+     */
+    public void setImageReaderEnable(boolean enable) {
+        this.mImageReaderEnable = enable;
+    }
+
+    /**
+     * 开启相机，参数为SurfaceTexture的宽高
+     */
+    public void openCamera() {
+        setOrientation();
         mSubHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (ActivityCompat.checkSelfPermission(APP.getApp(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                if (checkCameraPermission()) {
+                    try {
+                        StreamConfigurationMap configurationMap = getBackCameraStreamConfigurationMap();//获取后置摄像头配置
+                        initSurfaceSize(configurationMap);
+                        initImageReader(configurationMap);
+                        mCameraManager.openCamera(mCameraId, mDeviceStateCallback, mSubHandler);//开启相机
+                    } catch (Exception exception) {//开启相机失败
+                        mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
+                    }
+                } else {//权限不足
                     mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_NO_PERMISSION));
-                    return;//没有权限，返回
-                }
-                mCameraManager = (CameraManager) APP.getApp().getSystemService(Context.CAMERA_SERVICE);
-                if (mCameraManager != null) {
-                    try {
-                        StreamConfigurationMap map = null;
-                        for (String cameraId : mCameraManager.getCameraIdList()) {//查询CameraID
-                            CameraCharacteristics cameraCharacteristics = mCameraManager.getCameraCharacteristics(cameraId);
-                            Integer facing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
-                            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                                mCameraId = cameraId;
-                                map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-                                break;
-                            }
-                        }
-                        if (map != null) {
-                            initImageSize(map, width, height);//初始化mImageReader，及预览尺寸
-                            mCameraManager.openCamera(mCameraId, mDeviceStateCallback, mSubHandler);
-                            return;//未产生异常，返回。
-                        }
-                    } catch (Exception ignored) {
-                    }
-                }
-                mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
-            }
-        });
-    }
-
-    private void closeCamera() {
-        mSubHandler.removeAll();
-        mSubHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (mCaptureSession != null) {
-                    try {
-                        mCaptureSession.stopRepeating();
-                        mCaptureSession.abortCaptures();
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                    mCaptureSession.close();
-                    mCaptureSession = null;
-                }
-                if (mSurfaceTexture != null) {
-                    mSurfaceTexture.release();
-                    mSurfaceTexture = null;
-                }
-                if (mImageReader != null) {
-                    mImageReader.close();
-                    mImageReader = null;
-                }
-                if (mCameraDevice != null) {
-                    mCameraDevice.close();
-                    mCameraDevice = null;
-                }
-                if (mExecutorService != null) {
-                    mExecutorService.shutdownNow();
-                    mExecutorService = null;
-                }
-                if (mImageScanner != null) {
-                    synchronized (lock_Zbar) {
-                        mImageScanner.destroy();
-                        mImageScanner = null;
-                    }
-                }
-                mSubHandler.clear();
-                mSubHandler = null;
-            }
-        });
-    }
-
-    private void initImageSize(StreamConfigurationMap map, int width, int height) {
-        //从支持的尺寸列表中获取密度小于750000的最大尺寸(该尺寸为实时获取byte[]的尺寸，750000上限足够解析出数据，过大会导致预览画面严重丢帧)
-        Size streamSize = Collections.max(Arrays.asList(map.getOutputSizes(ImageFormat.YUV_420_888)), new Comparator<Size>() {
-            @Override
-            public int compare(Size cur, Size pre) {//返回值大于0，则保留cur
-                int preSize = pre.getWidth() * pre.getHeight();
-                int curSize = cur.getWidth() * cur.getHeight();
-                if (preSize > 750000) {
-                    return preSize - curSize;//上一个密度大于750000，取最小的个
-                } else if (curSize > 750000) {//上一个密度小于750000，当前密度大于750000，取上一个
-                    return -1;
-                } else {//上一个密度小于750000，当前密度也小于750000，取最大的个
-                    return curSize - preSize;
                 }
             }
         });
-        float ratio_wh = 1F * streamSize.getWidth() / streamSize.getHeight();
-        mImageReader = ImageReader.newInstance(streamSize.getWidth(), streamSize.getHeight(), ImageFormat.YUV_420_888, 2);
-        mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mSubHandler);
-        mPreviewSize = findOptimalPreviewSize(map.getOutputSizes(SurfaceTexture.class), width, height, ratio_wh);
-        Log.d(TAG, getClass().getName() + ".initImageSize() streamSize = " + streamSize + " , previewSize = " + mPreviewSize);
     }
 
-    private void initExecutorService() {
-        if (mExecutorService == null) {
-            mExecutorService = Executors.newSingleThreadExecutor();
-            mImageScanner = new ImageScanner();
-            mImageScanner.setConfig(0, Config.X_DENSITY, 3);
-            mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
-            mImageScanner.setConfig(Symbol.NONE, Config.ENABLE, 0);
-            mImageScanner.setConfig(Symbol.PARTIAL, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.EAN8, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.UPCE, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.ISBN10, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.UPCA, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.EAN13, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.ISBN13, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.I25, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.DATABAR, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.DATABAR_EXP, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.CODABAR, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.CODE39, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.PDF417, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.QRCODE, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.CODE93, Config.ENABLE, 1);
-            mImageScanner.setConfig(Symbol.CODE128, Config.ENABLE, 1);
+    /**
+     * 设置window方向
+     */
+    private void setOrientation() {
+        WindowManager windowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+        if (windowManager != null) {
+            mOrientation = windowManager.getDefaultDisplay().getRotation();
         }
+        Log.d(TAG, getClass().getName() + ".setOrientation() mOrientation = " + mOrientation);
     }
 
-    //获取大于View的尺寸，保证清晰度
-    private Size findOptimalPreviewSize(Size[] outputSizes, int width, int height, float ratio_wh) {
-        List<Size> bigEnough = new ArrayList<>();
-        for (Size size : outputSizes) {
-            if (size.getWidth() == size.getHeight() * ratio_wh && size.getWidth() >= width && size.getHeight() >= height) {
-                bigEnough.add(size);
+    private boolean checkCameraPermission() {
+        return ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * 获取后置摄像头配置及cameraId
+     */
+    private StreamConfigurationMap getBackCameraStreamConfigurationMap() throws NullPointerException, CameraAccessException {
+        if (mCameraManager == null) {
+            mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
+        }
+        if (mCameraManager == null) {
+            throw new NullPointerException("CameraManager is null");
+        }
+        for (String cameraId : mCameraManager.getCameraIdList()) {//查询CameraID
+            CameraCharacteristics cameraCharacteristics = mCameraManager.getCameraCharacteristics(cameraId);
+            Integer facing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                mCameraId = cameraId;
+                return cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             }
         }
-        Size optimalPreviewSize = null;
-        if (bigEnough.size() > 0) {
-            optimalPreviewSize = Collections.min(bigEnough, new Comparator<Size>() {
-                @Override
-                public int compare(Size lhs, Size rhs) {
-                    return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
-                            (long) rhs.getWidth() * rhs.getHeight());
-                }
-            });
-        }
-        bigEnough.clear();
-        if (optimalPreviewSize != null) {
-            return optimalPreviewSize;
+        throw new NullPointerException("No Back Camera Stream Configuration Map found!");
+    }
+
+    /**
+     * 初始化SurfaceSize
+     */
+    private void initSurfaceSize(StreamConfigurationMap configurationMap) {
+        Size[] outputSizes = configurationMap.getOutputSizes(SurfaceTexture.class);
+        if (mOrientation == Surface.ROTATION_0 || mOrientation == Surface.ROTATION_180) {
+            mSurfaceSize = getBigEnoughSize(outputSizes, mPreviewSize.getHeight(), mPreviewSize.getWidth());
         } else {
-            return outputSizes[0];
+            mSurfaceSize = getBigEnoughSize(outputSizes, mPreviewSize.getWidth(), mPreviewSize.getHeight());
+        }
+        mSurfaceTexture.setDefaultBufferSize(mSurfaceSize.getWidth(), mSurfaceSize.getHeight());
+        Log.d(TAG, getClass().getName() + ".initSurfaceSize() mSurfaceSize = " + mSurfaceSize.toString());
+    }
+
+    /**
+     * 初始化ImageReader
+     */
+    private void initImageReader(StreamConfigurationMap configurationMap) {
+        if (mImageReaderEnable && mImageReader == null) {
+            Size[] outputSizes = configurationMap.getOutputSizes(ImageFormat.YUV_420_888);
+            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, mImageReaderSuitPixels);
+            mImageReader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, 1);
+            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mSubHandler);
+            Log.d(TAG, getClass().getName() + ".initImageReader() mImageReaderSize = " + size.toString());
         }
     }
 
-    //开始预览
-    private void startPreview() throws CameraAccessException {//开始预览
-        Log.e(TAG, getClass().getName() + ".startPreview()");
-        initExecutorService();//初始化线程池及zBar扫描器
-        mSurfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());//设置预览尺寸
-        Surface surface = new Surface(mSurfaceTexture);
-        mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-
-//        mProcessor = new Progress(mRenderScript, mPreviewSize);
-//        mProcessor.setOutputSurface(surface);
-//        mInputSurface = mProcessor.getInputNormalSurface();
-//        mPreviewBuilder.addTarget(mInputSurface);
-//        camera.createCaptureSession(Arrays.asList(mInputSurface), mCameraCaptureSessionStateCallback, null);
-        mPreviewBuilder.addTarget(surface);//添加预览的Surface
-        mPreviewBuilder.addTarget(mImageReader.getSurface());//添加ImageReader的Surface
-        List<Surface> surfaceList = Arrays.asList(surface, mImageReader.getSurface());
-        mCameraDevice.createCaptureSession(surfaceList, mSessionStateCallback, mSubHandler);//创建会话
+    /**
+     * 返回sizes中宽高大于最小宽高的最小尺寸
+     */
+    private Size getBigEnoughSize(Size[] sizes, int minWidth, int minHeight) {
+        Size curSize = sizes[0];
+        boolean curBigEnough = curSize.getWidth() >= minWidth && curSize.getHeight() >= minHeight;
+        for (int i = 1; i < sizes.length; i++) {
+            Size nextSize = sizes[i];
+            boolean nextBigEnough = nextSize.getWidth() >= minWidth && nextSize.getHeight() >= minHeight;
+            if (!curBigEnough && nextBigEnough) {//curSize尺寸不够，nextSize够
+                curBigEnough = true;
+                curSize = nextSize;
+            } else if (curBigEnough ^ !nextBigEnough) {//curSize与nextSize尺寸同够或同不够
+                long curPixels = (long) curSize.getWidth() * curSize.getHeight();
+                long nextPixels = (long) nextSize.getWidth() * nextSize.getHeight();
+                if (curBigEnough ^ (curPixels < nextPixels)) {//尺寸同够且curSize不小于nextSize 或 尺寸同不够且curSize小于nextSize
+                    curSize = nextSize;
+                }
+            }
+        }
+        return curSize;
     }
 
-    //摄像头设备状态回调
+    /**
+     * 返回sizes中 1.宽高比与similarSize相似，2.像素不超过suitPixels 的最大尺寸
+     */
+    private Size getMaxSuitSize(Size[] sizes, final Size similarSize, final long suitPixels) {
+        Size curSize = sizes[0];
+        boolean curSimilar = similarSize != null && similarSize.getHeight() * curSize.getWidth() == similarSize.getWidth() * curSize.getHeight();
+        for (int i = 1; i < sizes.length; i++) {
+            Size nextSize = sizes[i];
+            boolean nextSimilar = similarSize != null && similarSize.getHeight() * nextSize.getWidth() == similarSize.getWidth() * nextSize.getHeight();
+            if (!curSimilar && nextSimilar) {//curSize不相似，nextSize相似
+                curSimilar = true;
+                curSize = nextSize;
+            } else if (!curSimilar ^ nextSimilar) {//同为相似或者同为不相似，进行尺寸筛选
+                long curPixels = (long) curSize.getWidth() * curSize.getHeight();
+                long nextPixels = (long) nextSize.getWidth() * nextSize.getHeight();
+                boolean curBigger = curPixels > nextPixels;
+                if ((curBigger && curPixels > suitPixels) || (!curBigger && nextPixels <= suitPixels)) {
+                    curSize = nextSize;
+                }
+            }
+        }
+        return curSize;
+    }
+
+    /**
+     * 摄像头设备状态回调，成功打开摄像头后准备预览
+     */
     private CameraDevice.StateCallback mDeviceStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {//成功打开摄像头
-            Log.e(TAG, getClass().getName() + ".onOpened()");
+            Log.d(TAG, getClass().getName() + ".onOpened()");
             try {
                 mCameraDevice = camera;
-                startPreview();//开始预览
+                preparePreview();//准备预览
             } catch (CameraAccessException ignored) {//预览出错
+                camera.close();
                 mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
             }
         }
@@ -326,16 +345,36 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
 
         @Override
         public void onError(@NonNull CameraDevice camera, int error) {//出错
-            Log.e(TAG, getClass().getName() + ".onError()");
+            Log.e(TAG, getClass().getName() + ".onError()" + error);
             mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
         }
     };
 
-    //会话状态回调
+    /**
+     * 准备预览
+     */
+    private void preparePreview() throws CameraAccessException {
+        mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+        List<Surface> surfaceList = new ArrayList<>();
+        Surface surface = new Surface(mSurfaceTexture);
+        mPreviewBuilder.addTarget(surface);//添加预览的Surface
+        surfaceList.add(surface);
+        if (mImageReaderEnable && mImageReader != null) {
+            Surface imageReaderSurface = mImageReader.getSurface();
+            mPreviewBuilder.addTarget(imageReaderSurface);
+            surfaceList.add(imageReaderSurface);
+        }
+//        mPreviewBuilder.addTarget(mInputSurface);//添加预览的Surface
+//        surfaceList.add(mInputSurface);
+        mCameraDevice.createCaptureSession(surfaceList, mSessionStateCallback, mSubHandler);//创建会话
+    }
+
+    /**
+     * 摄像头预览配置会话状态回调，成功配置会话后设置对焦模式，开始获取图像
+     */
     private CameraCaptureSession.StateCallback mSessionStateCallback = new CameraCaptureSession.StateCallback() {
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {//会话配置完成
-            Log.e(TAG, getClass().getName() + ".onConfigured()");
             mCaptureSession = session;
             try {
                 mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);//自动对焦
@@ -354,11 +393,13 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
         }
     };
 
-    //ImageAvailable监听
+    /**
+     * ImageReader的ImageAvailable监听，当有帧图像到达时会进行回调
+     */
     private ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Image image = reader.acquireLatestImage();
+            Image image = reader.acquireNextImage();
             if (image != null) {
                 Image.Plane[] planes = image.getPlanes();//ImageFormat.YUV_420_888
                 if (planes != null && planes.length == 3) {//YUV三个分量 Y:灰度 UV:色度
@@ -366,8 +407,8 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                     if (byteBuffer != null) {
                         byte[] data = new byte[byteBuffer.remaining()];
                         byteBuffer.get(data);
-                        if (mExecutorService != null) {
-                            mExecutorService.execute(new ResolveRunnable(data, image.getWidth(), image.getHeight()));
+                        if (mGraphicDecoder != null) {
+                            mGraphicDecoder.decode(data, image.getWidth(), image.getHeight(), mFrameRatioRect);
                         }
                         byteBuffer.clear();
                     }
@@ -375,98 +416,75 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 image.close();
             }
         }
-
     };
 
-    private class ResolveRunnable implements Runnable {
-
-        private final byte[] data;
-        private final int width;
-        private final int height;
-
-        private ResolveRunnable(byte[] data, int width, int height) {
-            this.data = data;
-            this.width = width;
-            this.height = height;
-        }
-
-        @Override
-        public void run() {
-            net.sourceforge.zbar.Image barcode = new net.sourceforge.zbar.Image(width, height, "Y800");//Y800为zBar规定格式，同ImageFormat.Y8
-            barcode.setData(data);
-            SymbolSet symbolSet = null;
-            synchronized (lock_Zbar) {
-                if (mImageScanner != null && mImageScanner.scanImage(barcode) != 0) {
-                    symbolSet = mImageScanner.getResults();
-                }
-            }
-            if (symbolSet == null) return;
-            for (Symbol symbol : symbolSet) {
-                String result = symbol.getData();
-                if (result != null && result.length() > 0) {
-                    synchronized (lock_Handler) {
-                        if (mMainHandler != null) {
-                            Message msg = mMainHandler.obtainMessage(HANDLER_SUCCESS_RESULT);
-                            msg.obj = result;
-                            mMainHandler.sendMessage(msg);
-                        }
+    /**
+     * 关闭相机
+     */
+    public void closeCamera() {
+        Log.d(TAG, getClass().getName() + ".closeCamera()");
+        mSubHandler.removeAll();
+        mSubHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (mCaptureSession != null) {
+                    try {
+                        mCaptureSession.stopRepeating();
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
                     }
-                    break;
+                    mCaptureSession.close();
+                    mCaptureSession = null;
+                }
+                if (mCameraDevice != null) {
+                    mCameraDevice.close();
+                    mCameraDevice = null;
+                }
+                if (mSurfaceTexture != null) {
+                    mSurfaceTexture.release();
+                }
+                if (mImageReader != null) {
+                    mImageReader.close();
                 }
             }
+        });
+    }
 
+    public void detach() {
+        closeCamera();
+        if (mMainHandler != null) {
+            mMainHandler.clear();
         }
-
     }
 
     @Override
     public void handleMessage(Message msg) {
-        Log.d(TAG, getClass().getName() + ".handleMessage()");
         switch (msg.what) {
             case HANDLER_SUCCESS_OPEN: {
-                if (weakReference.get() != null) {
-                    int orientation = APP.getApp().getResources().getConfiguration().orientation;
-                    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                        weakReference.get().openCameraSuccess(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-                    } else {
-                        weakReference.get().openCameraSuccess(mPreviewSize.getHeight(), mPreviewSize.getWidth());
-                    }
+                if (mCameraDeviceListener != null) {
+                    mCameraDeviceListener.openCameraSuccess(mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), mOrientation);
                 }
-                break;
-            }
-            case HANDLER_SUCCESS_RESULT: {
-                if (msg.obj.equals(mResult)) {
-                    count++;
-                    if (count > 2 && weakReference.get() != null) {
-                        weakReference.get().scanSuccess((String) msg.obj);
-                        count = 0;
-                    }
-                } else {
-                    mResult = (String) msg.obj;
-                    count = 0;
-                }
-                Log.d(TAG, getClass().getName() + ".handleMessage() result = " + msg.obj + " , count = " + count);
                 break;
             }
             case HANDLER_FAIL_OPEN:
             case HANDLER_FAIL_CONFIG: {
                 closeCamera();
-                if (weakReference.get() != null) {
-                    weakReference.get().openCameraError();
+                if (mCameraDeviceListener != null) {
+                    mCameraDeviceListener.openCameraError();
                 }
                 break;
             }
             case HANDLER_FAIL_DISCONNECTED: {
                 closeCamera();
-                if (weakReference.get() != null) {
-                    weakReference.get().cameraDisconnected();
+                if (mCameraDeviceListener != null) {
+                    mCameraDeviceListener.cameraDisconnected();
                 }
                 break;
             }
             case HANDLER_FAIL_NO_PERMISSION: {
                 closeCamera();
-                if (weakReference.get() != null) {
-                    weakReference.get().noCameraPermission();
+                if (mCameraDeviceListener != null) {
+                    mCameraDeviceListener.noCameraPermission();
                 }
                 break;
             }
@@ -475,5 +493,25 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
             }
         }
     }
+
+//    private void createAllcation(RenderScript renderScript, final Size streamSize) {
+//        Type.Builder yuvTypeBuilder = new Type.Builder(renderScript, Element.YUV(renderScript));
+//        yuvTypeBuilder.setX(streamSize.getWidth());
+//        yuvTypeBuilder.setY(streamSize.getHeight());
+//        yuvTypeBuilder.setYuvFormat(ImageFormat.YUV_420_888);
+//        Allocation allocation = Allocation.createTyped(renderScript, yuvTypeBuilder.create(),
+//                Allocation.USAGE_IO_INPUT | Allocation.USAGE_SCRIPT);
+//        mInputSurface = allocation.getSurface();//在startPreview中addTarget(mInputSurface)即可接收Camera实时数据，但是同样会降低FPS
+//        allocation.setOnBufferAvailableListener(new Allocation.OnBufferAvailableListener() {
+//            @Override
+//            public void onBufferAvailable(Allocation allocation) {
+//                allocation.ioReceive();
+//                int size = allocation.getBytesSize();
+//                int[] bytes = new int[size];
+//                allocation.copyFrom(bytes);
+//                //bytes即为YUV_420_888格式字节数组。
+//            }
+//        });
+//    }
 
 }

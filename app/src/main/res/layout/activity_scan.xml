@@ -6,6 +6,7 @@
 
     <com.demo.camera2.ScannerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/layout_scannerframe"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/black"
@@ -15,26 +16,26 @@
         <com.demo.camera2.AutoFitTextureView
             android:id="@+id/camera_preview"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:backgroundTint="@color/black" />
 
         <com.demo.camera2.ScannerFrameView
-            android:id="@+id/hehe"
+            android:id="@+id/scannerframe"
             android:layout_width="wrap_content"
-            app:frameCorner_width="4dp"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true" />
+            android:layout_centerHorizontal="true"
+            app:scan_cycle="1500" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/hehe"
+            android:layout_below="@id/scannerframe"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="10dp"
             android:background="@color/gray2"
             android:padding="5dp"
             android:text="@string/tips_scan"
             android:textColor="@color/gray" />
-
 
     </com.demo.camera2.ScannerFrameLayout>
 </RelativeLayout>
