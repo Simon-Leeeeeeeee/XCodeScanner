@@ -287,8 +287,8 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
         if (mTextureReader == null) {
             Size[] outputSizes = configurationMap.getOutputSizes(SurfaceTexture.class);
             Size size = getMaxSuitSize(outputSizes, mSurfaceSize, null);
-            mTextureReader = new TextureReader(size.getWidth(), size.getHeight());//ImageFormat.YUV_420_888
-            mTextureReader.setOnFrameAvailableListener(mOnFrameAvailableListener);//TODO 设置回调
+            mTextureReader = new TextureReader(size.getWidth(), size.getHeight());
+            mTextureReader.setOnFrameAvailableListener(mOnFrameAvailableListener);
             Log.d(TAG, getClass().getName() + ".initTextureReader() mTextureReader = " + size.toString());
         }
     }
