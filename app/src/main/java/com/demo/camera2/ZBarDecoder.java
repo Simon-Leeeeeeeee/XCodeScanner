@@ -1,6 +1,7 @@
 package com.demo.camera2;
 
 import android.graphics.RectF;
+import android.os.Message;
 import android.util.Log;
 
 import net.sourceforge.zbar.Config;
@@ -18,7 +19,7 @@ import java.util.concurrent.Executors;
  */
 
 @SuppressWarnings("unused")
-public class ZBarDecoder extends GraphicDecoder {
+public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandlerListener {
 
     /**
      * Symbol detected but not decoded.
@@ -86,7 +87,7 @@ public class ZBarDecoder extends GraphicDecoder {
     public static final int CODE128 = 128;
 
     private Image mZBarImage;
-    private volatile ImageScanner mImageScanner;
+    private ImageScanner mImageScanner;
 
     private ExecutorService mExecutorService;
 
@@ -96,9 +97,12 @@ public class ZBarDecoder extends GraphicDecoder {
 
     private int mQualityRequire = 10;//解码质量要求
 
+    private final BaseHandler mHandler;
+
     public ZBarDecoder(DecodeListener listener) {
         super(listener);
         initZBar();
+        this.mHandler = new BaseHandler(this);
     }
 
     /**
@@ -129,11 +133,18 @@ public class ZBarDecoder extends GraphicDecoder {
         this.mQualityRequire = qualityRequire;
     }
 
-    /**
-     * 设置识别区域
-     */
-    public void setDecodeRect() {
+    @Override
+    public void decode(byte[] data, int width, int height, RectF frameRatioRect) {
+        if (mImageScanner == null) return;
+        if (mExecutorService == null) {
+            mExecutorService = Executors.newSingleThreadExecutor();
+        }
+        mExecutorService.execute(new DecodeRunnable(data, width, height, frameRatioRect));
+    }
 
+    @Override
+    public void handleMessage(Message msg) {
+        deliverResult((String) msg.obj);
     }
 
     @Override
@@ -154,16 +165,6 @@ public class ZBarDecoder extends GraphicDecoder {
         }
     }
 
-    @Override
-    public void decode(byte[] data, int width, int height, RectF frameRatioRect) {
-        if (mImageScanner == null) return;
-        //可能高并发量，因此用线程池处理
-        if (mExecutorService == null) {
-            mExecutorService = Executors.newSingleThreadExecutor();
-        }
-        mExecutorService.execute(new DecodeRunnable(data, width, height, frameRatioRect));
-    }
-
     private class DecodeRunnable implements Runnable {
 
         private final byte[] data;
@@ -180,10 +181,6 @@ public class ZBarDecoder extends GraphicDecoder {
 
         @Override
         public void run() {
-            zbarDecode(data, width, height, frameRatioRect);
-        }
-
-        private void zbarDecode(byte[] data, int width, int height, RectF frameRatioRect) {
             synchronized (lock_Decode) {
                 if (mZBarImage == null) {
                     mZBarImage = new Image("Y800");
@@ -213,7 +210,8 @@ public class ZBarDecoder extends GraphicDecoder {
                     Log.d(TAG, getClass().getName() + ".zbarDecode() : types = " + types
                             + " , quality = " + quality + " , result = " + result);
                     if (quality > mQualityRequire) {
-                        deliverResult(result);
+                        Message msg = mHandler.obtainMessage(0, result);
+                        mHandler.sendMessage(msg);
                     }
 //                    byte[] dataBytes = symbol.getDataBytes();
 //                    int[] bounds = symbol.getBounds();

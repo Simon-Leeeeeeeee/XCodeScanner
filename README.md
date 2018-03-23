@@ -11,6 +11,7 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 
 -  使用camera2API
 -  自动对焦
+-  扫码结果准确率高，可控制精度
 -  扫描界面可任意定制
 
 ## 更新计划
@@ -19,6 +20,12 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 -  增加Zxing支持。
 
 ## 版本记录
+
+-  V1.0.3   `2018/03/23`
+
+    1. 新增`TextureReader`，通过双缓冲纹理获取帧数据进行回调，代替ImageReader的使用。
+    2. 修改`GraphicDecoder`，handler放到子类中去操作。
+
 -  V1.0.2   `2018/03/14`
 
     1. 新增抽象类`GraphicDecoder`，将条码解析模块进行抽离。
@@ -32,6 +39,6 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
     1. 新增`ScannerFrameLayout`，为`RelativeLayout`的子类，可对扫描框的位置和大小进行设置。
     2. 修改`ScannerFrameView`，可对扫描框内部进行定制。
     
--  V1.0.0
+-  V1.0.0   `2018/02/03`
 
     初次提交代码。

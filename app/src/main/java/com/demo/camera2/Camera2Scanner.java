@@ -39,16 +39,13 @@ import java.util.List;
  * 2.换用新camera2API,适用于android5.0及以上。
  * 3.图像出现锯齿，且变形严重。原因：未调用mSurfaceTexture.setDefaultBufferSize(mSurfaceSize.getWidth(), mSurfaceSize.getHeight());
  * 4.无实时byte[]数据。原因：未调用mPreviewBuilder.addTarget(mImageReader.getSurface());
- * 5.实时byte[]数据获取导致严重丢帧。原因：未知，可能是mImageReader解析数据阻塞线程。解决：调整mImageReader尺寸，使像素密度小于75W
- * 6.无法正确解析结果。原因：a.原始数据格式为YUV，目标格式为Y8。应舍弃UV分量，仅传入Y分量灰度图。b.目标size不应为mPreviewSize
- * <p>
- * 后续...
- * 问题5只是治标不治本，也许还能通过更好的办法获取byte[]
- * a.使用new Surface(new SurfaceTexture(textureID)); 监听onFrameAvailable 获得纹理。
- * 存在问题：纹理是个啥？怎么获得YUV分量中的Y。
- * b.在onSurfaceTextureUpdated中通过TextureView获取bitmap，转YUV。
- * c.RenderScript，无法解决。与ImageReader同样会降低FPS，参照createAllcation()。
- * d.待发现...
+ * 5.无法正确解析结果。原因：a.原始数据格式为YUV，目标格式为Y8。应舍弃UV分量，仅传入Y分量灰度图。b.目标size不应为mPreviewSize
+ * 6.实时byte[]数据获取导致严重丢帧。原因：未知，可能是mImageReader解析数据阻塞线程。解决：
+ * <p>a.使用TextureReader解析帧数据，推荐
+ * <p>b.调整mImageReader尺寸，使像素密度小于75万
+ * <p>c.在onSurfaceTextureUpdated中通过TextureView获取bitmap，转YUV。
+ * <p>d.RenderScript，无法解决。与ImageReader同样会降低FPS，参照createAllcation()。
+ * <p>e.待发现...
  */
 
 @SuppressWarnings("unused")
@@ -84,9 +81,12 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private BaseHandler mSubHandler;//子线程Handler
     private BaseHandler mMainHandler;//主线程Handler
 
+    private int mFrameReaderType;//帧数据获取方式 0:TextureReader(默认); 1:ImageReader(不推荐)
+
     private ImageReader mImageReader;//用于获取帧数据
-    private boolean mImageReaderEnable = true;//是否启用ImageReader获取帧数据
     private long mImageReaderSuitPixels = 750000L;//ImageReader的最大尺寸
+
+    private TextureReader mTextureReader;//用于获取帧数据
 
     private CameraDeviceListener mCameraDeviceListener;//相机设备回调
 
@@ -181,10 +181,12 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     }
 
     /**
-     * 设置是否启用ImageReader获取帧数据，在openCamera后设置无效
+     * 设置帧数据获取方式，在openCamera后设置无效
+     * 0: TextureReader(默认);
+     * 1: ImageReader(不推荐)
      */
-    public void setImageReaderEnable(boolean enable) {
-        this.mImageReaderEnable = enable;
+    public void setFrameReaderType(int type) {
+        this.mFrameReaderType = type;
     }
 
     /**
@@ -199,7 +201,11 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                     try {
                         StreamConfigurationMap configurationMap = getBackCameraStreamConfigurationMap();//获取后置摄像头配置
                         initSurfaceSize(configurationMap);
-                        initImageReader(configurationMap);
+                        if (mFrameReaderType == 1) {
+                            initImageReader(configurationMap);
+                        } else {
+                            initTextureReader(configurationMap);
+                        }
                         mCameraManager.openCamera(mCameraId, mDeviceStateCallback, mSubHandler);//开启相机
                     } catch (Exception exception) {//开启相机失败
                         mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
@@ -265,12 +271,25 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
      * 初始化ImageReader
      */
     private void initImageReader(StreamConfigurationMap configurationMap) {
-        if (mImageReaderEnable && mImageReader == null) {
+        if (mImageReader == null) {
             Size[] outputSizes = configurationMap.getOutputSizes(ImageFormat.YUV_420_888);
             Size size = getMaxSuitSize(outputSizes, mSurfaceSize, mImageReaderSuitPixels);
             mImageReader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, 1);
             mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mSubHandler);
             Log.d(TAG, getClass().getName() + ".initImageReader() mImageReaderSize = " + size.toString());
+        }
+    }
+
+    /**
+     * 初始化TextureReader
+     */
+    private void initTextureReader(StreamConfigurationMap configurationMap) {
+        if (mTextureReader == null) {
+            Size[] outputSizes = configurationMap.getOutputSizes(SurfaceTexture.class);
+            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, null);
+            mTextureReader = new TextureReader(size.getWidth(), size.getHeight());//ImageFormat.YUV_420_888
+            mTextureReader.setOnFrameAvailableListener(mOnFrameAvailableListener);//TODO 设置回调
+            Log.d(TAG, getClass().getName() + ".initTextureReader() mTextureReader = " + size.toString());
         }
     }
 
@@ -300,7 +319,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     /**
      * 返回sizes中 1.宽高比与similarSize相似，2.像素不超过suitPixels 的最大尺寸
      */
-    private Size getMaxSuitSize(Size[] sizes, final Size similarSize, final long suitPixels) {
+    private Size getMaxSuitSize(Size[] sizes, final Size similarSize, final Long suitPixels) {
         Size curSize = sizes[0];
         boolean curSimilar = similarSize != null && similarSize.getHeight() * curSize.getWidth() == similarSize.getWidth() * curSize.getHeight();
         for (int i = 1; i < sizes.length; i++) {
@@ -313,7 +332,11 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 long curPixels = (long) curSize.getWidth() * curSize.getHeight();
                 long nextPixels = (long) nextSize.getWidth() * nextSize.getHeight();
                 boolean curBigger = curPixels > nextPixels;
-                if ((curBigger && curPixels > suitPixels) || (!curBigger && nextPixels <= suitPixels)) {
+                if (suitPixels != null) {
+                    if ((curBigger && curPixels > suitPixels) || (!curBigger && nextPixels <= suitPixels)) {
+                        curSize = nextSize;
+                    }
+                } else if (!curBigger) {
                     curSize = nextSize;
                 }
             }
@@ -345,10 +368,11 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
 
         @Override
         public void onError(@NonNull CameraDevice camera, int error) {//出错
-            Log.e(TAG, getClass().getName() + ".onError()" + error);
+            Log.e(TAG, getClass().getName() + ".onError() error = " + error);
             mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
         }
     };
+    SurfaceTexture surfaceTexture;
 
     /**
      * 准备预览
@@ -359,13 +383,19 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
         Surface surface = new Surface(mSurfaceTexture);
         mPreviewBuilder.addTarget(surface);//添加预览的Surface
         surfaceList.add(surface);
-        if (mImageReaderEnable && mImageReader != null) {
-            Surface imageReaderSurface = mImageReader.getSurface();
-            mPreviewBuilder.addTarget(imageReaderSurface);
-            surfaceList.add(imageReaderSurface);
+        if (mFrameReaderType == 1) {
+            if (mImageReader != null) {
+                Surface imageReaderSurface = mImageReader.getSurface();
+                mPreviewBuilder.addTarget(imageReaderSurface);
+                surfaceList.add(imageReaderSurface);
+            }
+        } else {
+            if (mTextureReader != null) {
+                Surface rendererSurface = mTextureReader.getSurface();
+                mPreviewBuilder.addTarget(rendererSurface);
+                surfaceList.add(rendererSurface);
+            }
         }
-//        mPreviewBuilder.addTarget(mInputSurface);//添加预览的Surface
-//        surfaceList.add(mInputSurface);
         mCameraDevice.createCaptureSession(surfaceList, mSessionStateCallback, mSubHandler);//创建会话
     }
 
@@ -418,6 +448,16 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
         }
     };
 
+    private TextureReader.OnFrameAvailableListener mOnFrameAvailableListener = new TextureReader.OnFrameAvailableListener() {
+
+        @Override
+        public void onFrameAvailable(byte[] frameData, int width, int height) {
+            if (mGraphicDecoder != null) {
+                mGraphicDecoder.decode(frameData, width, height, mFrameRatioRect);
+            }
+        }
+    };
+
     /**
      * 关闭相机
      */
@@ -442,6 +482,9 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 }
                 if (mSurfaceTexture != null) {
                     mSurfaceTexture.release();
+                }
+                if (mTextureReader != null) {
+                    mTextureReader.close();
                 }
                 if (mImageReader != null) {
                     mImageReader.close();

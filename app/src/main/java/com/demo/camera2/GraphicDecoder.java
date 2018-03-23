@@ -1,8 +1,6 @@
 package com.demo.camera2;
 
 import android.graphics.RectF;
-import android.os.Looper;
-import android.os.Message;
 import android.support.annotation.CallSuper;
 
 import java.lang.ref.WeakReference;
@@ -12,43 +10,26 @@ import java.lang.ref.WeakReference;
  * @e-mail jmlixiaomeng@163.com
  */
 
-public abstract class GraphicDecoder implements BaseHandler.BaseHandlerListener {
+public abstract class GraphicDecoder {
 
-    private final BaseHandler mHandler;
-    private WeakReference<DecodeListener> weakReference;//弱引用，防止内存泄漏
+    private final WeakReference<DecodeListener> mWeakReference;//弱引用，防止内存泄漏
 
     public GraphicDecoder(DecodeListener listener) {
-        this.weakReference = new WeakReference<>(listener);
-        this.mHandler = new BaseHandler(this, Looper.getMainLooper());
+        this.mWeakReference = new WeakReference<>(listener);
     }
 
     public abstract void decode(byte[] data, int width, int height, RectF frameRatioRect);
 
     public final void deliverResult(String result) {
-        if (weakReference != null) {
-            Message msg = mHandler.obtainMessage();
-            msg.obj = result;
-            mHandler.sendMessage(msg);
+        DecodeListener listener = mWeakReference.get();
+        if (listener != null) {
+            listener.decodeSuccess(result);
         }
     }
 
     @CallSuper
     public void detach() {
-        mHandler.clear();
-        if (weakReference != null) {
-            weakReference.clear();
-            weakReference = null;
-        }
-    }
-
-    @Override
-    public void handleMessage(Message msg) {
-        if (weakReference != null) {
-            DecodeListener listener = weakReference.get();
-            if (listener != null) {
-                listener.decodeSuccess((String) msg.obj);
-            }
-        }
+        mWeakReference.clear();
     }
 
     interface DecodeListener {
