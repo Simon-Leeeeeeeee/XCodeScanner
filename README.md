@@ -21,6 +21,11 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 
 ## 版本记录
 
+-  V1.0.4   `2018/03/27`
+
+    1. 修改`ZBarDecoder`，修复多线程可能的空指针异常。
+    2. 修改`GraphicDecoder`，EGL14替换EGL10，解决部分机型不兼容的问题；解决多线程可能的空指针异常。
+
 -  V1.0.3   `2018/03/23`
 
     1. 新增`TextureReader`，通过双缓冲纹理获取帧数据进行回调，代替ImageReader的使用。

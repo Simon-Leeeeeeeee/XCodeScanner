@@ -4,17 +4,18 @@ import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
+import android.util.Log;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-import javax.microedition.khronos.egl.EGL10;
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLContext;
-import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.egl.EGLSurface;
+import android.opengl.EGL14;
+import android.opengl.EGLConfig;
+import android.opengl.EGLContext;
+import android.opengl.EGLDisplay;
+import android.opengl.EGLSurface;
 
 public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvailableListener {
 
@@ -71,11 +72,11 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
     private int mGLTextureIndex;
     private int mGLShaderProgram;//着色器脚本程序
 
-    private EGL10 mEGL;
     private EGLContext mEGLContext;
     private EGLDisplay mEGLDisplay;
     private EGLSurface mEGLSurface;
 
+    private byte[] mOutPutBytes;
     private ByteBuffer mOutPutBuffer;
     private FloatBuffer mVertexBuffer;
     private FloatBuffer mTextureBuffer;
@@ -89,7 +90,7 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
 
     private OnFrameAvailableListener mFrameAvailableListener;
 
-    private boolean running = true;
+    private volatile boolean running = true;
     private volatile boolean frameAvailable = false;
 
     public interface OnFrameAvailableListener {
@@ -162,15 +163,17 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
     }
 
     public void close() {
-        running = false;
-        if (mOESSurface != null) {
-            mOESSurface.release();
-            mOESSurface = null;
-        }
-        if (mOESSurfaceTexture != null) {
-            mOESSurfaceTexture.setOnFrameAvailableListener(null);
-            mOESSurfaceTexture.release();
-            mOESSurfaceTexture = null;
+        synchronized (this) {
+            running = false;
+            if (mOESSurface != null) {
+                mOESSurface.release();
+                mOESSurface = null;
+            }
+            if (mOESSurfaceTexture != null) {
+                mOESSurfaceTexture.setOnFrameAvailableListener(null);
+                mOESSurfaceTexture.release();
+                mOESSurfaceTexture = null;
+            }
         }
     }
 
@@ -186,7 +189,7 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         setupOutputFrame();//设置双缓冲帧
         while (running) {
             synchronized (this) {
-                if (frameAvailable) {
+                if (frameAvailable && running) {
                     frameAvailable = false;
                     drawTexture();
                 }
@@ -197,39 +200,41 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
     }
 
     private void initEGL() {
-        mEGL = (EGL10) EGLContext.getEGL();
-        mEGLDisplay = mEGL.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
-        int version[] = new int[2];//version中存放EGL 版本号，int[0]为主版本号，int[1]为子版本号
-        mEGL.eglInitialize(mEGLDisplay, version); // 初始化显示设备、获取EGL版本号
+        mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+        int version[] = new int[2];
+        EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1);
 
         EGLConfig[] configArray = new EGLConfig[1];
-        int[] ConfigAttributes = new int[]{
-                EGL10.EGL_RENDERABLE_TYPE, 4,
-                EGL10.EGL_RED_SIZE, 8,
-                EGL10.EGL_GREEN_SIZE, 8,
-                EGL10.EGL_BLUE_SIZE, 8,
-                EGL10.EGL_ALPHA_SIZE, 8,
-                EGL10.EGL_DEPTH_SIZE, 0,
-                EGL10.EGL_STENCIL_SIZE, 0,
-                EGL10.EGL_NONE
+        int[] configAttributes = new int[]{
+                EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,        //渲染类型
+                EGL14.EGL_BUFFER_SIZE, 32,                           //color buffer 的颜色深度 RGBA之和
+                EGL14.EGL_RED_SIZE, 8,                               //指定RGB中的R大小（bits）
+                EGL14.EGL_GREEN_SIZE, 8,                             //指定G大小
+                EGL14.EGL_BLUE_SIZE, 8,                              //指定B大小
+                EGL14.EGL_ALPHA_SIZE, 8,                             //指定Alpha大小，以上四项实际上指定了像素格式
+                EGL14.EGL_DEPTH_SIZE, 0,                             //指定深度缓存大小
+//                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT, //指定渲染api类别
+                EGL14.EGL_STENCIL_SIZE, 1,
+                EGL14.EGL_NONE                                       //总是以EGL14.EGL_NONE结尾
         };
-        if (!mEGL.eglChooseConfig(mEGLDisplay, ConfigAttributes, configArray, 1, new int[1])) {
-            throw new IllegalArgumentException("TextureReader Error! Failed to choose EGLConfig:" + GLUtils.getEGLErrorString(mEGL.eglGetError()));
-        }
-        EGLConfig eglConfig = configArray[0];
+        EGL14.eglChooseConfig(mEGLDisplay, configAttributes, 0, configArray, 0, 1, new int[1], 0);
 
         //将Surface转换为本地窗口
-        mEGLSurface = mEGL.eglCreatePbufferSurface(mEGLDisplay, eglConfig, null);
-        if (mEGLSurface == null || mEGLSurface == EGL10.EGL_NO_SURFACE) {
-            throw new RuntimeException("TextureReader Error! Failed to create EGLSurface: " + GLUtils.getEGLErrorString(mEGL.eglGetError()));
+        final int[] attributes = {
+                EGL14.EGL_WIDTH, mWidth,
+                EGL14.EGL_HEIGHT, mHeight,
+                EGL14.EGL_NONE};
+        mEGLSurface = EGL14.eglCreatePbufferSurface(mEGLDisplay, configArray[0], attributes, 0);
+        if (mEGLSurface == null || mEGLSurface == EGL14.EGL_NO_SURFACE) {
+            throw new RuntimeException("TextureReader Error! Failed to create EGLSurface: " + GLUtils.getEGLErrorString(EGL14.eglGetError()));
         }
 
-        int[] contextAttributes = {0x3098, 2, EGL10.EGL_NONE};
-        mEGLContext = mEGL.eglCreateContext(mEGLDisplay, eglConfig, EGL10.EGL_NO_CONTEXT, contextAttributes);
+        int[] contextAttributes = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE};
+        mEGLContext = EGL14.eglCreateContext(mEGLDisplay, configArray[0], EGL14.EGL_NO_CONTEXT, contextAttributes, 0);
 
         //将EGLDisplay、EGLSurface和EGLContext进行绑定
-        if (!mEGL.eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
-            throw new RuntimeException("TextureReader Error! EGL MakeCurrent failure: " + GLUtils.getEGLErrorString(mEGL.eglGetError()));
+        if (!EGL14.eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
+            throw new RuntimeException("TextureReader Error! EGL MakeCurrent failure: " + GLUtils.getEGLErrorString(EGL14.eglGetError()));
         }
     }
 
@@ -363,17 +368,21 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         GLES20.glDisableVertexAttribArray(mGLTextureIndex);
         if (mFrameAvailableListener != null) {
             GLES20.glReadPixels(0, 0, mWidth, mHeight * 3 / 8, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mOutPutBuffer);
-            byte[] bytes = new byte[mWidth * mHeight];
-            int position = mOutPutBuffer.position();
-            mOutPutBuffer.get(bytes, 0, bytes.length);
-            mOutPutBuffer.position(position);
-            mFrameAvailableListener.onFrameAvailable(bytes, mWidth, mHeight);
+            if (mOutPutBytes == null) {
+                mOutPutBytes = new byte[mWidth * mHeight];
+            }
+            mOutPutBuffer.position(0);
+            mOutPutBuffer.get(mOutPutBytes, 0, mOutPutBytes.length);
+            mOutPutBuffer.clear();
+            mFrameAvailableListener.onFrameAvailable(mOutPutBytes, mWidth, mHeight);
         }
 
         //GLUnbindFrameBuffer
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
-        mEGL.eglSwapBuffers(mEGLDisplay, mEGLSurface);
+        EGL14.eglSwapBuffers(mEGLDisplay, mEGLSurface);
+
+        mOESSurfaceTexture.releaseTexImage();
     }
 
     @Override
@@ -391,10 +400,14 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
     }
 
     private void releaseEGL() {
-        mEGL.eglMakeCurrent(mEGLDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
-        mEGL.eglDestroySurface(mEGLDisplay, mEGLSurface);
-        mEGL.eglDestroyContext(mEGLDisplay, mEGLContext);
-        mEGL.eglTerminate(mEGLDisplay);
+        EGL14.eglMakeCurrent(mEGLDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+        if (mEGLSurface != null) {
+            EGL14.eglDestroySurface(mEGLDisplay, mEGLSurface);
+        }
+        if (mEGLContext != null) {
+            EGL14.eglDestroyContext(mEGLDisplay, mEGLContext);
+        }
+        EGL14.eglTerminate(mEGLDisplay);
     }
 
     @Override

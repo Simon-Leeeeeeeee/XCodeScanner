@@ -36,7 +36,7 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
         mCameraScanner = new Camera2Scanner(this);
         mCameraScanner.setCameraDeviceListener(this);
         mPreview.setSurfaceTextureListener(this);
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE},
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},
                 123);
     }
 
@@ -49,7 +49,9 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
 
     @Override
     public void onDestroy() {
-        mZBarDecoder.detach();
+        if (mZBarDecoder != null) {
+            mZBarDecoder.detach();
+        }
         mCameraScanner.detach();
         super.onDestroy();
     }

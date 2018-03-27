@@ -139,6 +139,9 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
         if (mExecutorService == null) {
             mExecutorService = Executors.newSingleThreadExecutor();
         }
+        if (mZBarImage == null) {
+            mZBarImage = new Image("Y800");
+        }
         mExecutorService.execute(new DecodeRunnable(data, width, height, frameRatioRect));
     }
 
@@ -153,6 +156,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
         synchronized (lock_Decode) {
             if (mZBarImage != null) {
                 mZBarImage.destroy();
+                mZBarImage = null;
             }
             if (mImageScanner != null) {
                 mImageScanner.destroy();
@@ -181,10 +185,9 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
 
         @Override
         public void run() {
+            SymbolSet symbolSet = null;
             synchronized (lock_Decode) {
-                if (mZBarImage == null) {
-                    mZBarImage = new Image("Y800");
-                }
+                if (mZBarImage == null) return;
                 mZBarImage.setSize(width, height);
                 if (frameRatioRect != null) {
                     int frameLeft = (int) (frameRatioRect.left * width);
@@ -193,10 +196,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
                     int frameHeight = (int) (frameRatioRect.height() * height);
                     mZBarImage.setCrop(frameLeft, frameTop, frameWidth, frameHeight);
                 }
-            }
-            mZBarImage.setData(data);
-            SymbolSet symbolSet = null;
-            synchronized (lock_Decode) {
+                mZBarImage.setData(data);
                 if (mImageScanner != null && mImageScanner.scanImage(mZBarImage) != 0) {
                     symbolSet = mImageScanner.getResults();
                 }
