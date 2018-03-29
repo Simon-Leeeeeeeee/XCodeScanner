@@ -1,4 +1,4 @@
-:star2: Camera2Scanner <font color=#0366d6 size=4 >Version 1.0.1</font>
+:star2: Camera2Scanner
 ============================
 
 ## 目录
