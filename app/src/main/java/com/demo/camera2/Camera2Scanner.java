@@ -84,7 +84,8 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private int mFrameReaderType;//帧数据获取方式 0:TextureReader(默认); 1:ImageReader(不推荐)
 
     private ImageReader mImageReader;//用于获取帧数据
-    private long mImageReaderSuitPixels = 750000L;//ImageReader的最大尺寸
+    private long m1080P = 2073600L;//1080P
+    private long mImageReaderSuitPixels =  750000L;//ImageReader的最大尺寸
 
     private TextureReader mTextureReader;//用于获取帧数据
 
@@ -200,11 +201,12 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 if (checkCameraPermission()) {
                     try {
                         StreamConfigurationMap configurationMap = getBackCameraStreamConfigurationMap();//获取后置摄像头配置
-                        initSurfaceSize(configurationMap);
+                        Size[] outputSizes = configurationMap.getOutputSizes(SurfaceTexture.class);
+                        initSurfaceSize(outputSizes);
                         if (mFrameReaderType == 1) {
-                            initImageReader(configurationMap);
+                            initImageReader(outputSizes);
                         } else {
-                            initTextureReader(configurationMap);
+                            initTextureReader(outputSizes);
                         }
                         mCameraManager.openCamera(mCameraId, mDeviceStateCallback, mSubHandler);//开启相机
                     } catch (Exception exception) {//开启相机失败
@@ -256,8 +258,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     /**
      * 初始化SurfaceSize
      */
-    private void initSurfaceSize(StreamConfigurationMap configurationMap) {
-        Size[] outputSizes = configurationMap.getOutputSizes(SurfaceTexture.class);
+    private void initSurfaceSize(Size[] outputSizes) {
         if (mOrientation == Surface.ROTATION_0 || mOrientation == Surface.ROTATION_180) {
             mSurfaceSize = getBigEnoughSize(outputSizes, mPreviewSize.getHeight(), mPreviewSize.getWidth());
         } else {
@@ -270,10 +271,10 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     /**
      * 初始化ImageReader
      */
-    private void initImageReader(StreamConfigurationMap configurationMap) {
+    private void initImageReader(Size[] outputSizes) {
         if (mImageReader == null) {
-            Size[] outputSizes = configurationMap.getOutputSizes(ImageFormat.YUV_420_888);
-            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, mImageReaderSuitPixels);
+//            Size[] outputSizes = configurationMap.getOutputSizes(ImageFormat.YUV_420_888);
+            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, mImageReaderSuitPixels);//像素过大会导致卡顿严重！
             mImageReader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, 1);
             mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mSubHandler);
             Log.d(TAG, getClass().getName() + ".initImageReader() mImageReaderSize = " + size.toString());
@@ -283,10 +284,9 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     /**
      * 初始化TextureReader
      */
-    private void initTextureReader(StreamConfigurationMap configurationMap) {
+    private void initTextureReader(Size[] outputSizes) {
         if (mTextureReader == null) {
-            Size[] outputSizes = configurationMap.getOutputSizes(SurfaceTexture.class);
-            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, null);
+            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, m1080P);//像素过大会导致二维码解析失败！
             mTextureReader = new TextureReader(size.getWidth(), size.getHeight());
             mTextureReader.setOnFrameAvailableListener(mOnFrameAvailableListener);
             Log.d(TAG, getClass().getName() + ".initTextureReader() mTextureReader = " + size.toString());
@@ -319,7 +319,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     /**
      * 返回sizes中 1.宽高比与similarSize相似，2.像素不超过suitPixels 的最大尺寸
      */
-    private Size getMaxSuitSize(Size[] sizes, final Size similarSize, final Long suitPixels) {
+    private Size getMaxSuitSize(Size[] sizes, final Size similarSize, final Long maxPixels) {
         Size curSize = sizes[0];
         boolean curSimilar = similarSize != null && similarSize.getHeight() * curSize.getWidth() == similarSize.getWidth() * curSize.getHeight();
         for (int i = 1; i < sizes.length; i++) {
@@ -332,8 +332,8 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 long curPixels = (long) curSize.getWidth() * curSize.getHeight();
                 long nextPixels = (long) nextSize.getWidth() * nextSize.getHeight();
                 boolean curBigger = curPixels > nextPixels;
-                if (suitPixels != null) {
-                    if ((curBigger && curPixels > suitPixels) || (!curBigger && nextPixels <= suitPixels)) {
+                if (maxPixels != null) {
+                    if ((curBigger && curPixels > maxPixels) || (!curBigger && nextPixels <= maxPixels)) {
                         curSize = nextSize;
                     }
                 } else if (!curBigger) {

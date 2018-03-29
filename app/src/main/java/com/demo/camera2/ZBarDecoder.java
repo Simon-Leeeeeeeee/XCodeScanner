@@ -53,10 +53,10 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
      * Interleaved 2 of 5.
      */
     public static final int I25 = 25;
-    /**
-     * DataBar (RSS-14).
-     */
-    public static final int DATABAR = 34;
+//    /**
+//     * DataBar (RSS-14).
+//     */
+//    public static final int DATABAR = 34;//不常用且易误判，取消此种格式的条码识别
     /**
      * DataBar Expanded.
      */
@@ -95,65 +95,61 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
 
     private final Object lock_Decode = new Object();//互斥锁
 
-    private int mQualityRequire = 10;//解码质量要求
+    private int[] mSymbolTypes;//要识别的条码格式
 
     private final BaseHandler mHandler;
 
+    private volatile boolean isDetached;
+
     public ZBarDecoder(DecodeListener listener) {
         super(listener);
-        initZBar();
         this.mHandler = new BaseHandler(this);
-    }
-
-    /**
-     * 初始化，配置条码格式
-     */
-    private void initZBar() {
-        mImageScanner = new ImageScanner();
-        mImageScanner.setConfig(0, Config.X_DENSITY, 3);
-        mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
-        mImageScanner.setConfig(0, Config.ENABLE, 0);
-        for (int symbolType : getSymbolTypes()) {
-            mImageScanner.setConfig(symbolType, Config.ENABLE, 1);
-        }
-    }
-
-    /**
-     * 初始化，配置条码格式，可复写
-     */
-    public int[] getSymbolTypes() {
-        return new int[]{PARTIAL, EAN8, UPCE, ISBN10, UPCA, EAN13, ISBN13, I25, DATABAR
-                , DATABAR_EXP, CODABAR, CODE39, PDF417, QRCODE, CODE93, CODE128};
-    }
-
-    /**
-     * 设置质量要求
-     */
-    public void setBarCodeQualityRequire(int qualityRequire) {
-        this.mQualityRequire = qualityRequire;
+        this.isDetached = false;
     }
 
     @Override
-    public void decode(byte[] data, int width, int height, RectF frameRatioRect) {
-        if (mImageScanner == null) return;
-        if (mExecutorService == null) {
-            mExecutorService = Executors.newSingleThreadExecutor();
+    public synchronized void decode(byte[] data, int width, int height, RectF frameRatioRect) {
+        if (isDetached) return;
+        if (mImageScanner == null) {
+            mImageScanner = new ImageScanner();
+            mImageScanner.setConfig(0, Config.X_DENSITY, 3);
+            mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
+            mImageScanner.setConfig(0, Config.ENABLE, 0);
+            for (int symbolType : getSymbolTypes()) {
+                mImageScanner.setConfig(symbolType, Config.ENABLE, 1);
+            }
         }
         if (mZBarImage == null) {
             mZBarImage = new Image("Y800");
         }
+        if (mExecutorService == null) {
+            mExecutorService = Executors.newSingleThreadExecutor();
+        }
         mExecutorService.execute(new DecodeRunnable(data, width, height, frameRatioRect));
     }
 
-    @Override
-    public void handleMessage(Message msg) {
-        deliverResult((String) msg.obj);
+    /**
+     * 获取条码格式
+     */
+    public int[] getSymbolTypes() {
+        if (mSymbolTypes == null) {
+            mSymbolTypes = new int[]{PARTIAL, EAN8, UPCE, ISBN10, UPCA, EAN13, ISBN13, I25//, DATABAR
+                    , DATABAR_EXP, CODABAR, CODE39, PDF417, QRCODE, CODE93, CODE128};
+        }
+        return mSymbolTypes;
+    }
+
+    /**
+     * 设置条码格式
+     */
+    public void setSymbolTypes(int[] symbolTypes) {
+        this.mSymbolTypes = symbolTypes;
     }
 
     @Override
-    public void detach() {
-        super.detach();
+    public synchronized void detach() {
         synchronized (lock_Decode) {
+            isDetached = true;
             if (mZBarImage != null) {
                 mZBarImage.destroy();
                 mZBarImage = null;
@@ -167,6 +163,31 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
                 mExecutorService = null;
             }
         }
+        super.detach();
+    }
+
+    @Override
+    public void handleMessage(Message msg) {
+        deliverResult(msg.arg1, msg.arg2, (String) msg.obj);
+    }
+
+    private SymbolSet ZBarDecode(byte[] data, int width, int height, RectF frameRatioRect) {
+        synchronized (lock_Decode) {
+            if (isDetached) return null;
+            mZBarImage.setSize(width, height);
+            if (frameRatioRect != null) {
+                int frameLeft = (int) (frameRatioRect.left * width);
+                int frameTop = (int) (frameRatioRect.top * height);
+                int frameWidth = (int) (frameRatioRect.width() * width);
+                int frameHeight = (int) (frameRatioRect.height() * height);
+                mZBarImage.setCrop(frameLeft, frameTop, frameWidth, frameHeight);
+            }
+            mZBarImage.setData(data);
+            if (mImageScanner.scanImage(mZBarImage) != 0) {
+                return mImageScanner.getResults();
+            }
+        }
+        return null;
     }
 
     private class DecodeRunnable implements Runnable {
@@ -185,38 +206,22 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
 
         @Override
         public void run() {
-            SymbolSet symbolSet = null;
-            synchronized (lock_Decode) {
-                if (mZBarImage == null) return;
-                mZBarImage.setSize(width, height);
-                if (frameRatioRect != null) {
-                    int frameLeft = (int) (frameRatioRect.left * width);
-                    int frameTop = (int) (frameRatioRect.top * height);
-                    int frameWidth = (int) (frameRatioRect.width() * width);
-                    int frameHeight = (int) (frameRatioRect.height() * height);
-                    mZBarImage.setCrop(frameLeft, frameTop, frameWidth, frameHeight);
-                }
-                mZBarImage.setData(data);
-                if (mImageScanner != null && mImageScanner.scanImage(mZBarImage) != 0) {
-                    symbolSet = mImageScanner.getResults();
-                }
-            }
+            SymbolSet symbolSet = ZBarDecode(data, width, height, frameRatioRect);
             if (symbolSet == null) return;
+            Log.d(TAG, getClass().getName() + ".zbarDecode() : symbolSet.size() = " + symbolSet.size());
             for (Symbol symbol : symbolSet) {
+                Log.e(TAG, getClass().getName() + ".zbarDecode()========");
                 String result = symbol.getData();
                 if (result != null && result.length() > 0) {
-                    int types = symbol.getType();
-                    int quality = symbol.getQuality();
-                    Log.d(TAG, getClass().getName() + ".zbarDecode() : types = " + types
-                            + " , quality = " + quality + " , result = " + result);
-                    if (quality > mQualityRequire) {
-                        Message msg = mHandler.obtainMessage(0, result);
-                        mHandler.sendMessage(msg);
-                    }
 //                    byte[] dataBytes = symbol.getDataBytes();
 //                    int[] bounds = symbol.getBounds();
 //                    int count = symbol.getCount();
-                    break;
+                    int type = symbol.getType();
+                    int quality = symbol.getQuality();
+                    Log.d(TAG, getClass().getName() + ".zbarDecode() : type = " + type
+                            + " , quality = " + quality + " , result = " + result);
+                    mHandler.sendMessage(mHandler.obtainMessage(0, type, quality, result));
+//                    break;
                 }
             }
         }

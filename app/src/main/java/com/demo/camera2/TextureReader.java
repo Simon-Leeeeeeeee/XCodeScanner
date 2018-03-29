@@ -4,7 +4,6 @@ import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
-import android.util.Log;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
@@ -16,6 +15,11 @@ import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLSurface;
+
+/**
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
+ */
 
 public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvailableListener {
 
@@ -368,6 +372,7 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         GLES20.glDisableVertexAttribArray(mGLTextureIndex);
         if (mFrameAvailableListener != null) {
             GLES20.glReadPixels(0, 0, mWidth, mHeight * 3 / 8, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mOutPutBuffer);
+//            mOutPutBytes = mOutPutBuffer.array();
             if (mOutPutBytes == null) {
                 mOutPutBytes = new byte[mWidth * mHeight];
             }

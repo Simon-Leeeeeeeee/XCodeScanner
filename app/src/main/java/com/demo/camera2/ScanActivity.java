@@ -36,8 +36,6 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
         mCameraScanner = new Camera2Scanner(this);
         mCameraScanner.setCameraDeviceListener(this);
         mPreview.setSurfaceTextureListener(this);
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},
-                123);
     }
 
     @Override
@@ -72,7 +70,7 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
     }
 
     @Override
-    public void decodeSuccess(final String result) {
+    public void decodeSuccess(int type, int quality, String result) {
         ToastHelper.showToast(result, ToastHelper.LENGTH_SHORT);
     }
 
@@ -115,19 +113,8 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
         return true;
     }
 
-    long curTime;
-    long pastTime;
-
     @Override// 每有一帧画面，都会回调一次此方法
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        curTime = System.currentTimeMillis();
-        if (pastTime > 0 && curTime > pastTime) {
-            int FPS = (int) (1000 / (curTime - pastTime));
-//            Log.e(TAG, getClass().getName() + ".onSurfaceTextureUpdated() FPS = " + FPS);
-        } else {
-            Log.e(TAG, getClass().getName() + ".onSurfaceTextureUpdated() ???? = " + (curTime - pastTime));
-        }
-        pastTime = curTime;
     }
 
 }

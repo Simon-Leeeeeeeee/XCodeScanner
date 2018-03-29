@@ -20,10 +20,10 @@ public abstract class GraphicDecoder {
 
     public abstract void decode(byte[] data, int width, int height, RectF frameRatioRect);
 
-    public final void deliverResult(String result) {
+    public final void deliverResult(int type, int quality, String result) {
         DecodeListener listener = mWeakReference.get();
         if (listener != null) {
-            listener.decodeSuccess(result);
+            listener.decodeSuccess(type, quality, result);
         }
     }
 
@@ -33,7 +33,7 @@ public abstract class GraphicDecoder {
     }
 
     interface DecodeListener {
-        void decodeSuccess(String result);
+        void decodeSuccess(int type, int quality, String result);
     }
 
 }

@@ -2,8 +2,6 @@ package com.demo.camera2;
 
 import android.app.Application;
 
-import com.squareup.leakcanary.LeakCanary;
-
 public class APP extends Application {
     private static APP mAPP;
 
@@ -11,10 +9,6 @@ public class APP extends Application {
     public void onCreate() {
         super.onCreate();
         mAPP = this;
-        if (LeakCanary.isInAnalyzerProcess(this)) {
-            return;
-        }
-        LeakCanary.install(this);
     }
 
     @Override

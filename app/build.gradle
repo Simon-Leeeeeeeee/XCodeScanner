@@ -6,9 +6,8 @@ android {
         applicationId "com.demo.camera2"
         minSdkVersion 21
         targetSdkVersion 26
-        versionCode 4
-        versionName "1.0.4"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        versionCode 5
+        versionName "1.0.5"
     }
     buildTypes {
         release {
@@ -19,13 +18,7 @@ android {
 }
 
 dependencies {
-    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.4'
-    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile project(':zbar')
 }
