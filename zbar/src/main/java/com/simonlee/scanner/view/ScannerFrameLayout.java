@@ -1,4 +1,4 @@
-package com.demo.camera2;
+package com.simonlee.scanner.view;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.RelativeLayout;
+
+import com.simonlee.scanner.R;
 
 /**
  * @author Simon Lee

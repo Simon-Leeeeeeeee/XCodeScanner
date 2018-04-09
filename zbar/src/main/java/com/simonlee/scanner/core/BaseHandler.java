@@ -1,4 +1,4 @@
-package com.demo.camera2;
+package com.simonlee.scanner.core;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -10,7 +10,6 @@ import java.lang.ref.WeakReference;
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  */
-
 public class BaseHandler extends Handler {
 
     private WeakReference<BaseHandlerListener> weakReference;

@@ -1,4 +1,4 @@
-package com.demo.camera2;
+package com.simonlee.scanner.core;
 
 import android.graphics.RectF;
 import android.os.Message;
@@ -16,6 +16,11 @@ import java.util.concurrent.Executors;
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * 存在的问题：
+ * 1.像素太高时会导致二维码无法识别，限制为1920*1080暂无问题
+ * 2.条码误读为DataBar(RSS-14)格式，此格式不常见，屏蔽即可
+ * 3.条码误读为UPC-E格式，此格式常用性一般，按需求决定是否开放，并结合精度进行判断
+ * 4.EAN-13格式的条码部分情况下识别出现错误，表现在a.解析成其他格式 b.解析出错误条码，如6920586221399，与算法及分辨率有关，与条码图像无关
  */
 
 @SuppressWarnings("unused")
@@ -53,10 +58,10 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
      * Interleaved 2 of 5.
      */
     public static final int I25 = 25;
-//    /**
-//     * DataBar (RSS-14).
-//     */
-//    public static final int DATABAR = 34;//不常用且易误判，取消此种格式的条码识别
+    /**
+     * DataBar (RSS-14).
+     */
+    public static final int DATABAR = 34;
     /**
      * DataBar Expanded.
      */
@@ -114,9 +119,9 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
             mImageScanner = new ImageScanner();
             mImageScanner.setConfig(0, Config.X_DENSITY, 3);
             mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
-            mImageScanner.setConfig(0, Config.ENABLE, 0);
+            mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the Symbols
             for (int symbolType : getSymbolTypes()) {
-                mImageScanner.setConfig(symbolType, Config.ENABLE, 1);
+                mImageScanner.setConfig(symbolType, Config.ENABLE, 1);//Only symbolType is enable
             }
         }
         if (mZBarImage == null) {
@@ -133,7 +138,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
      */
     public int[] getSymbolTypes() {
         if (mSymbolTypes == null) {
-            mSymbolTypes = new int[]{PARTIAL, EAN8, UPCE, ISBN10, UPCA, EAN13, ISBN13, I25//, DATABAR
+            mSymbolTypes = new int[]{EAN8, ISBN10, UPCA, EAN13, ISBN13, I25//, PARTIAL, UPCE, DATABAR
                     , DATABAR_EXP, CODABAR, CODE39, PDF417, QRCODE, CODE93, CODE128};
         }
         return mSymbolTypes;
@@ -208,9 +213,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
         public void run() {
             SymbolSet symbolSet = ZBarDecode(data, width, height, frameRatioRect);
             if (symbolSet == null) return;
-            Log.d(TAG, getClass().getName() + ".zbarDecode() : symbolSet.size() = " + symbolSet.size());
             for (Symbol symbol : symbolSet) {
-                Log.e(TAG, getClass().getName() + ".zbarDecode()========");
                 String result = symbol.getData();
                 if (result != null && result.length() > 0) {
 //                    byte[] dataBytes = symbol.getDataBytes();
@@ -221,7 +224,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
                     Log.d(TAG, getClass().getName() + ".zbarDecode() : type = " + type
                             + " , quality = " + quality + " , result = " + result);
                     mHandler.sendMessage(mHandler.obtainMessage(0, type, quality, result));
-//                    break;
+                    break;
                 }
             }
         }

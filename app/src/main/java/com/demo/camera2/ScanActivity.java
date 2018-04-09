@@ -1,12 +1,17 @@
 package com.demo.camera2;
 
-import android.Manifest;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.TextureView;
+
+import com.simonlee.scanner.core.Camera2Scanner;
+import com.simonlee.scanner.core.GraphicDecoder;
+import com.simonlee.scanner.core.ZBarDecoder;
+import com.simonlee.scanner.view.AutoFitTextureView;
+import com.simonlee.scanner.view.ScannerFrameLayout;
+import com.simonlee.scanner.view.ScannerFrameView;
 
 /**
  * @author Simon Lee
@@ -69,9 +74,25 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
         ToastHelper.showToast("出错了", ToastHelper.LENGTH_SHORT);
     }
 
+    int mCount = 0;
+    String mResult = null;
+
     @Override
     public void decodeSuccess(int type, int quality, String result) {
-        ToastHelper.showToast(result, ToastHelper.LENGTH_SHORT);
+        if (result.equals(mResult)) {
+            if (++mCount > 3) {//连续四次相同，则显示结果（主要防止误读）
+                if (quality < 10) {
+                    ToastHelper.showToast("[" + type + "/00" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                } else if (quality < 100) {
+                    ToastHelper.showToast("[" + type + "/0" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                } else {
+                    ToastHelper.showToast("[" + type + "/" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                }
+            }
+        } else {
+            mCount = 1;
+            mResult = result;
+        }
     }
 
     @Override

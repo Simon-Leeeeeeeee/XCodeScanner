@@ -1,41 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
 
-    <com.demo.camera2.ScannerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/layout_scannerframe"
+<com.simonlee.scanner.view.ScannerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layout_scannerframe"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    app:frame_verticalMarginRatio="0.5"
+    app:frame_widthRatio="0.7">
+
+    <com.simonlee.scanner.view.AutoFitTextureView
+        android:id="@+id/camera_preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/black"
-        app:frame_verticalMarginRatio="0.5"
-        app:frame_widthRatio="0.7">
+        android:backgroundTint="@color/black" />
 
-        <com.demo.camera2.AutoFitTextureView
-            android:id="@+id/camera_preview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:backgroundTint="@color/black" />
+    <com.simonlee.scanner.view.ScannerFrameView
+        android:id="@+id/scannerframe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        app:scan_cycle="1500" />
 
-        <com.demo.camera2.ScannerFrameView
-            android:id="@+id/scannerframe"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            app:scan_cycle="1500" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/scannerframe"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:background="@color/gray2"
+        android:padding="5dp"
+        android:text="@string/tips_scan"
+        android:textColor="@color/gray" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/scannerframe"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="10dp"
-            android:background="@color/gray2"
-            android:padding="5dp"
-            android:text="@string/tips_scan"
-            android:textColor="@color/gray" />
-
-    </com.demo.camera2.ScannerFrameLayout>
-</RelativeLayout>
+</com.simonlee.scanner.view.ScannerFrameLayout>

@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
     defaultConfig {
         applicationId "com.demo.camera2"
         minSdkVersion 21
-        targetSdkVersion 26
-        versionCode 5
-        versionName "1.0.5"
+        targetSdkVersion 27
+        versionCode 6
+        versionName "1.0.6"
     }
     buildTypes {
         release {
@@ -19,6 +19,6 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:appcompat-v7:27.1.0'
     compile project(':zbar')
 }

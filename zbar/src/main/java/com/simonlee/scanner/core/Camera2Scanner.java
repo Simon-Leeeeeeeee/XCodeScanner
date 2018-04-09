@@ -1,4 +1,4 @@
-package com.demo.camera2;
+package com.simonlee.scanner.core;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -20,7 +20,7 @@ import android.os.Build;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
@@ -84,8 +84,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private int mFrameReaderType;//帧数据获取方式 0:TextureReader(默认); 1:ImageReader(不推荐)
 
     private ImageReader mImageReader;//用于获取帧数据
-    private long m1080P = 2073600L;//1080P
-    private long mImageReaderSuitPixels =  750000L;//ImageReader的最大尺寸
+    private long mImageReaderSuitPixels = 750000L;//ImageReader的最大尺寸
 
     private TextureReader mTextureReader;//用于获取帧数据
 
@@ -231,7 +230,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     }
 
     private boolean checkCameraPermission() {
-        return ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+        return ContextCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
 
     /**
@@ -286,7 +285,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
      */
     private void initTextureReader(Size[] outputSizes) {
         if (mTextureReader == null) {
-            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, m1080P);//像素过大会导致二维码解析失败！
+            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, 2073600L);//像素过大会导致二维码解析失败！此处限制为1080P
             mTextureReader = new TextureReader(size.getWidth(), size.getHeight());
             mTextureReader.setOnFrameAvailableListener(mOnFrameAvailableListener);
             Log.d(TAG, getClass().getName() + ".initTextureReader() mTextureReader = " + size.toString());
@@ -470,6 +469,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 if (mCaptureSession != null) {
                     try {
                         mCaptureSession.stopRepeating();
+                        mCaptureSession.abortCaptures();
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }

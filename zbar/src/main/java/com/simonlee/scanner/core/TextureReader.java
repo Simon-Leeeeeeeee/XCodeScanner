@@ -1,26 +1,27 @@
-package com.demo.camera2;
+package com.simonlee.scanner.core;
 
+import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;
+import android.opengl.EGL14;
+import android.opengl.EGLConfig;
+import android.opengl.EGLContext;
+import android.opengl.EGLDisplay;
+import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
+import android.os.Build;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-import android.opengl.EGL14;
-import android.opengl.EGLConfig;
-import android.opengl.EGLContext;
-import android.opengl.EGLDisplay;
-import android.opengl.EGLSurface;
-
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  */
-
+@TargetApi(Build.VERSION_CODES.KITKAT)
 public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvailableListener {
 
     // 着色器中的自定义变量

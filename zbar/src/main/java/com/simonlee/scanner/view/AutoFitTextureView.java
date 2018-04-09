@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.demo.camera2;
+package com.simonlee.scanner.view;
 
 import android.content.Context;
 import android.util.AttributeSet;

@@ -25,58 +25,68 @@
 
 package net.sourceforge.zbar;
 
-/** Immutable container for decoded result symbols associated with an image
+/**
+ * Immutable container for decoded result symbols associated with an image
  * or a composite symbol.
  */
 public class SymbolSet
-    extends java.util.AbstractCollection<Symbol>
-{
-    /** C pointer to a zbar_symbol_set_t. */
+        extends java.util.AbstractCollection<Symbol> {
+    /**
+     * C pointer to a zbar_symbol_set_t.
+     */
     private long peer;
 
-    static
-    {
+    static {
         System.loadLibrary("zbarjni");
         init();
     }
+
     private static native void init();
 
-    /** SymbolSets are only created by other package methods. */
-    SymbolSet (long peer)
-    {
+    /**
+     * SymbolSets are only created by other package methods.
+     */
+    SymbolSet(long peer) {
         this.peer = peer;
     }
 
-    protected void finalize ()
-    {
+    protected void finalize() {
         destroy();
     }
 
-    /** Clean up native data associated with an instance. */
-    public synchronized void destroy ()
-    {
-        if(peer != 0) {
+    /**
+     * Clean up native data associated with an instance.
+     */
+    public synchronized void destroy() {
+        if (peer != 0) {
             destroy(peer);
             peer = 0;
         }
     }
 
-    /** Release the associated peer instance.  */
+    /**
+     * Release the associated peer instance.
+     */
     private native void destroy(long peer);
 
-    /** Retrieve an iterator over the Symbol elements in this collection. */
-    public java.util.Iterator<Symbol> iterator ()
-    {
+    /**
+     * Retrieve an iterator over the Symbol elements in this collection.
+     */
+    public java.util.Iterator<Symbol> iterator() {
         long sym = firstSymbol(peer);
-        if(sym == 0)
-            return(new SymbolIterator(null));
+        if (sym == 0)
+            return (new SymbolIterator(null));
 
-        return(new SymbolIterator(new Symbol(sym)));
+        return (new SymbolIterator(new Symbol(sym)));
     }
 
-    /** Retrieve the number of elements in the collection. */
+    /**
+     * Retrieve the number of elements in the collection.
+     */
     public native int size();
 
-    /** Retrieve C pointer to first symbol in the set. */
+    /**
+     * Retrieve C pointer to first symbol in the set.
+     */
     private native long firstSymbol(long peer);
 }
