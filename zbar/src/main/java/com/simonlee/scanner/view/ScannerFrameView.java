@@ -10,6 +10,7 @@ import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 
 import com.simonlee.scanner.R;
@@ -21,6 +22,16 @@ import com.simonlee.scanner.R;
 
 @SuppressWarnings("unused")
 public final class ScannerFrameView extends View {
+
+    /**
+     * 扫描框宽占比（相对父容器的宽）
+     */
+    private float mFrameWidthRatio;
+
+    /**
+     * 扫描框高宽比（高/宽）
+     */
+    private float mFrameHWRatio;
 
     /**
      * 边框是否显示
@@ -150,6 +161,16 @@ public final class ScannerFrameView extends View {
     public static final int DIRECTION_LEFT = 3;
     public static final int DIRECTION_RIGHT = 4;
 
+    /**
+     * LayoutParams宽度
+     */
+    private int mLayoutWidth;
+
+    /**
+     * LayoutParams高度
+     */
+    private int mLayoutHeight;
+
     public ScannerFrameView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         initView(context, attrs);
@@ -167,6 +188,15 @@ public final class ScannerFrameView extends View {
         this.isFrameLineVisible = typedArray.getBoolean(R.styleable.ScannerFrameView_frameLine_visible, true);
         this.mFrameLineWidth = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frameLine_width, (int) (density));
         this.mFrameLineColor = typedArray.getColor(R.styleable.ScannerFrameView_frameLine_color, Color.WHITE);
+
+        this.mLayoutWidth = typedArray.getLayoutDimension(R.styleable.ScannerFrameView_android_layout_width, 0);//-2wrap_content -1match_parent
+        this.mLayoutHeight = typedArray.getLayoutDimension(R.styleable.ScannerFrameView_android_layout_height, 0);//-2wrap_content -1match_parent
+
+        this.mFrameWidthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_widthRatio, 0.7F);
+        if (mFrameWidthRatio > 1) {
+            mFrameWidthRatio = 1;
+        }
+        this.mFrameHWRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_hwRatio, 1.0F);
 
         this.isFrameCornerVisible = typedArray.getBoolean(R.styleable.ScannerFrameView_frameCorner_visible, true);
         this.mFrameCornerLength = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frameCorner_length, 0);
@@ -191,8 +221,25 @@ public final class ScannerFrameView extends View {
     }
 
     @Override
+    public void setLayoutParams(ViewGroup.LayoutParams params) {
+        mLayoutWidth = params.width;
+        mLayoutHeight = params.width;
+        super.setLayoutParams(params);
+    }
+
+    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+        if (mFrameWidthRatio > 0 && mLayoutWidth == ViewGroup.LayoutParams.WRAP_CONTENT && widthMode != MeasureSpec.EXACTLY) {
+            widthSize = (int) (widthSize * mFrameWidthRatio);
+        }
+        if (mFrameHWRatio > 0 && mLayoutHeight == ViewGroup.LayoutParams.WRAP_CONTENT && heightMode != MeasureSpec.EXACTLY) {
+            heightSize = (int) (widthSize * mFrameHWRatio);
+        }
+        setMeasuredDimension(widthSize, heightSize);
         measureFrame();
     }
 
@@ -341,6 +388,27 @@ public final class ScannerFrameView extends View {
     protected void onDetachedFromWindow() {
         cancelScanAnimator();
         super.onDetachedFromWindow();
+    }
+
+    /**
+     * 设置扫描宽占比（相对父容器的宽）
+     *
+     * @param frameWidthRatio 宽占比
+     */
+    public void setFrameWidthRatio(float frameWidthRatio) {
+        if (frameWidthRatio > 1) {
+            frameWidthRatio = 1;
+        }
+        this.mFrameWidthRatio = frameWidthRatio;
+    }
+
+    /**
+     * 设置扫描框高宽比（高/宽）
+     *
+     * @param frameHWRatio 高宽比(height/width)
+     */
+    public void setFrameHWRatio(float frameHWRatio) {
+        this.mFrameHWRatio = frameHWRatio;
     }
 
     /**

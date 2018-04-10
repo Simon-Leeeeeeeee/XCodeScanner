@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<com.simonlee.scanner.view.ScannerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.simonlee.scanner.view.MaskConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/layout_scannerframe"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/black"
-    app:frame_verticalMarginRatio="0.5"
-    app:frame_widthRatio="0.7">
+    android:layout_height="match_parent">
 
     <com.simonlee.scanner.view.AutoFitTextureView
-        android:id="@+id/camera_preview"
+        android:id="@+id/textureview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:backgroundTint="@color/black" />
@@ -19,18 +14,23 @@
         android:id="@+id/scannerframe"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.33"
         app:scan_cycle="1500" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/scannerframe"
-        android:layout_centerHorizontal="true"
         android:layout_marginTop="10dp"
         android:background="@color/gray2"
         android:padding="5dp"
         android:text="@string/tips_scan"
-        android:textColor="@color/gray" />
+        android:textColor="@color/gray"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/scannerframe" />
 
-</com.simonlee.scanner.view.ScannerFrameLayout>
+</com.simonlee.scanner.view.MaskConstraintLayout>

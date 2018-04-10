@@ -180,7 +180,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
         synchronized (lock_Decode) {
             if (isDetached) return null;
             mZBarImage.setSize(width, height);
-            if (frameRatioRect != null) {
+            if (frameRatioRect != null && !frameRatioRect.isEmpty()) {
                 int frameLeft = (int) (frameRatioRect.left * width);
                 int frameTop = (int) (frameRatioRect.top * height);
                 int frameWidth = (int) (frameRatioRect.width() * width);

@@ -21,6 +21,11 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 
 ## 版本记录
 
+-  V1.0.7   `2018/04/10`
+
+    1. 调整扫描框宽高计算方式，新增`MaskConstraintLayout`布局。
+    2. 优化`Camera2Scanner`，解决后台切换导致的闪退问题。
+
 -  V1.0.6   `2018/04/09`
 
     1. 调整代码结构，将扫码核心从app移植到zbar中。

@@ -24,7 +24,8 @@
         <activity
             android:name=".ScanActivity"
             android:launchMode="singleTask"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:theme="@style/BlackAppTheme" />
     </application>
 
 </manifest>

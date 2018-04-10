@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="ScannerFrameView">
+        <!-- 扫描框的宽 -->
+        <attr name="android:layout_width" />
+        <!-- 扫描框的高 -->
+        <attr name="android:layout_height" />
+        <!-- 扫描框宽占比(相对父容器的宽) -->
+        <attr name="frame_widthRatio" format="float|reference" />
+        <!-- 扫描框高宽比 -->
+        <attr name="frame_hwRatio" format="float|reference" />
+
         <!-- 边框是否显示 -->
         <attr name="frameLine_visible" format="boolean|reference" />
         <!-- 边框宽度 -->
@@ -40,16 +49,17 @@
         <attr name="scan_cycle" format="integer|reference" />
     </declare-styleable>
 
-    <declare-styleable name="ScannerFrameLayout">
-        <!-- 扫描框宽占比(相对整个View) -->
-        <attr name="frame_widthRatio" format="float|reference" />
-        <!-- 扫描框高宽比(相对自身宽度) -->
-        <attr name="frame_hwRatio" format="float|reference" />
-        <!-- 扫描框上下Margin比 -->
-        <attr name="frame_verticalMarginRatio" format="float|reference" />
+    <declare-styleable name="MaskRelativeLayout">
         <!-- 扫描框外部颜色 -->
-        <attr name="frame_outsideColor" format="color|reference" />
+        <attr name="frame_outsideColor" />
 
     </declare-styleable>
 
+    <declare-styleable name="MaskConstraintLayout">
+        <!-- 扫描框外部颜色 -->
+        <attr name="frame_outsideColor" />
+    </declare-styleable>
+
+    <!-- 扫描框外部颜色 -->
+    <attr name="frame_outsideColor" format="color|reference" />
 </resources>

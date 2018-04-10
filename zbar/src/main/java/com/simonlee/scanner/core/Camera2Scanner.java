@@ -53,6 +53,7 @@ import java.util.List;
 public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
 
     private final int HANDLER_SUCCESS_OPEN = 70001;
+    private final int HANDLER_FAIL_CLOSED = 80001;
     private final int HANDLER_FAIL_OPEN = 80002;
     private final int HANDLER_FAIL_CONFIG = 80003;
     private final int HANDLER_FAIL_DISCONNECTED = 80004;
@@ -76,7 +77,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private String mCameraId;//相机ID
     private Size mPreviewSize;//预览尺寸
     private Size mSurfaceSize;//Surface尺寸
-    private RectF mFrameRatioRect;//扫码框区域相对于预览尺寸所占比例，且已根据mOrientation做校正
+    private RectF mFrameRatioRect = new RectF();//扫码框区域相对于预览尺寸所占比例，且已根据mOrientation做校正
 
     private BaseHandler mSubHandler;//子线程Handler
     private BaseHandler mMainHandler;//主线程Handler
@@ -89,6 +90,8 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private TextureReader mTextureReader;//用于获取帧数据
 
     private CameraDeviceListener mCameraDeviceListener;//相机设备回调
+
+    private volatile boolean isCameraOpened;//相机开启状态
 
     public interface CameraDeviceListener {
 
@@ -139,15 +142,15 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     }
 
     /**
-     * 设置扫码框区域相对于mPreviewSize的宽高比，且根据屏幕方向进行校正
+     * 设置扫码识别区域，并根据mPreviewSize的宽高计算该区域占比，最后根据屏幕方向进行校正
      */
-    public void setFrameRatioRect(int left, int top, int right, int bottom) {
-        if (mPreviewSize == null) return;
+    public void setFrameRect(int left, int top, int right, int bottom) {
+        if (left >= right || top >= bottom || mPreviewSize == null) {
+            mFrameRatioRect.setEmpty();
+            return;
+        }
         float width = mPreviewSize.getWidth();
         float height = mPreviewSize.getHeight();
-        if (mFrameRatioRect == null) {
-            mFrameRatioRect = new RectF(1, 1, 1, 1);
-        }
         float leftRatio = left / width;
         float rightRatio = right / width;
         float topRatio = top / height;
@@ -170,7 +173,7 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 break;
             }
         }
-        Log.d(TAG, getClass().getName() + ".setFrameRatioRect() mFrameRatioRect = " + mFrameRatioRect);
+        Log.d(TAG, getClass().getName() + ".setFrameRect() mFrameRatioRect = " + mFrameRatioRect);
     }
 
     /**
@@ -193,12 +196,17 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
      * 开启相机，参数为SurfaceTexture的宽高
      */
     public void openCamera() {
+        if (isCameraOpened) return;
+        isCameraOpened = true;
         setOrientation();
         mSubHandler.post(new Runnable() {
             @Override
             public void run() {
                 if (checkCameraPermission()) {
                     try {
+                        if (mCameraManager == null) {
+                            mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
+                        }
                         StreamConfigurationMap configurationMap = getBackCameraStreamConfigurationMap();//获取后置摄像头配置
                         Size[] outputSizes = configurationMap.getOutputSizes(SurfaceTexture.class);
                         initSurfaceSize(outputSizes);
@@ -216,6 +224,54 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
                 }
             }
         });
+    }
+
+    /**
+     * 关闭相机
+     */
+    public void closeCamera() {
+        Log.d(TAG, getClass().getName() + ".closeCamera()");
+        isCameraOpened = false;
+//        mSubHandler.removeAll();
+        mSubHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (mCaptureSession != null) {
+                    try {
+                        mCaptureSession.stopRepeating();
+                        mCaptureSession.abortCaptures();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    mCaptureSession.close();
+                    mCaptureSession = null;
+                }
+                if (mCameraDevice != null) {
+                    try {
+                        mCameraDevice.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    mCameraDevice = null;
+                }
+            }
+        });
+    }
+
+    public void detach() {
+        Log.d(TAG, getClass().getName() + ".detach()");
+        if (mSurfaceTexture != null) {
+            mSurfaceTexture.release();
+        }
+        if (mTextureReader != null) {
+            mTextureReader.close();
+        }
+        if (mImageReader != null) {
+            mImageReader.close();
+        }
+        if (mMainHandler != null) {
+            mMainHandler.clear();
+        }
     }
 
     /**
@@ -237,12 +293,6 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
      * 获取后置摄像头配置及cameraId
      */
     private StreamConfigurationMap getBackCameraStreamConfigurationMap() throws NullPointerException, CameraAccessException {
-        if (mCameraManager == null) {
-            mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
-        }
-        if (mCameraManager == null) {
-            throw new NullPointerException("CameraManager is null");
-        }
         for (String cameraId : mCameraManager.getCameraIdList()) {//查询CameraID
             CameraCharacteristics cameraCharacteristics = mCameraManager.getCameraCharacteristics(cameraId);
             Integer facing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
@@ -350,12 +400,15 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {//成功打开摄像头
             Log.d(TAG, getClass().getName() + ".onOpened()");
-            try {
-                mCameraDevice = camera;
-                preparePreview();//准备预览
-            } catch (CameraAccessException ignored) {//预览出错
-                camera.close();
-                mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
+            if (isCameraOpened) {
+                try {
+                    mCameraDevice = camera;
+                    preparePreview();//准备预览
+                } catch (CameraAccessException ignored) {//预览出错
+                    mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
+                }
+            } else {
+                mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_CLOSED));
             }
         }
 
@@ -371,7 +424,6 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
             mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
         }
     };
-    SurfaceTexture surfaceTexture;
 
     /**
      * 准备预览
@@ -404,14 +456,19 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
     private CameraCaptureSession.StateCallback mSessionStateCallback = new CameraCaptureSession.StateCallback() {
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {//会话配置完成
-            mCaptureSession = session;
-            try {
-                mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);//自动对焦
-                //mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);//自动闪光灯
-                mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mSubHandler);//无限次的重复获取图像
-                mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_SUCCESS_OPEN));
-            } catch (CameraAccessException ignored) {
-                mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
+            Log.d(TAG, getClass().getName() + ".onConfigured()");
+            if (isCameraOpened) {
+                mCaptureSession = session;
+                try {
+                    mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);//自动对焦
+                    //mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);//自动闪光灯
+                    mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mSubHandler);//无限次的重复获取图像
+                    mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_SUCCESS_OPEN));
+                } catch (CameraAccessException ignored) {
+                    mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_OPEN));
+                }
+            } else {
+                mMainHandler.sendMessage(mMainHandler.obtainMessage(HANDLER_FAIL_CLOSED));
             }
         }
 
@@ -457,74 +514,35 @@ public class Camera2Scanner implements BaseHandler.BaseHandlerListener {
         }
     };
 
-    /**
-     * 关闭相机
-     */
-    public void closeCamera() {
-        Log.d(TAG, getClass().getName() + ".closeCamera()");
-        mSubHandler.removeAll();
-        mSubHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (mCaptureSession != null) {
-                    try {
-                        mCaptureSession.stopRepeating();
-                        mCaptureSession.abortCaptures();
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                    mCaptureSession.close();
-                    mCaptureSession = null;
-                }
-                if (mCameraDevice != null) {
-                    mCameraDevice.close();
-                    mCameraDevice = null;
-                }
-                if (mSurfaceTexture != null) {
-                    mSurfaceTexture.release();
-                }
-                if (mTextureReader != null) {
-                    mTextureReader.close();
-                }
-                if (mImageReader != null) {
-                    mImageReader.close();
-                }
-            }
-        });
-    }
-
-    public void detach() {
-        closeCamera();
-        if (mMainHandler != null) {
-            mMainHandler.clear();
-        }
-    }
-
     @Override
     public void handleMessage(Message msg) {
         switch (msg.what) {
-            case HANDLER_SUCCESS_OPEN: {
+            case HANDLER_SUCCESS_OPEN: {//开启成功
                 if (mCameraDeviceListener != null) {
                     mCameraDeviceListener.openCameraSuccess(mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), mOrientation);
                 }
                 break;
             }
-            case HANDLER_FAIL_OPEN:
-            case HANDLER_FAIL_CONFIG: {
+            case HANDLER_FAIL_CLOSED: {//已被关闭
+                closeCamera();
+                break;
+            }
+            case HANDLER_FAIL_OPEN://开启失败
+            case HANDLER_FAIL_CONFIG: {//配置失败
                 closeCamera();
                 if (mCameraDeviceListener != null) {
                     mCameraDeviceListener.openCameraError();
                 }
                 break;
             }
-            case HANDLER_FAIL_DISCONNECTED: {
+            case HANDLER_FAIL_DISCONNECTED: {//断开连接
                 closeCamera();
                 if (mCameraDeviceListener != null) {
                     mCameraDeviceListener.cameraDisconnected();
                 }
                 break;
             }
-            case HANDLER_FAIL_NO_PERMISSION: {
+            case HANDLER_FAIL_NO_PERMISSION: {//没有权限
                 closeCamera();
                 if (mCameraDeviceListener != null) {
                     mCameraDeviceListener.noCameraPermission();

@@ -21,18 +21,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button button = findViewById(R.id.btn_scan);
-        button.setOnClickListener(this);
+        Button button1 = findViewById(R.id.btn_scan_relative);
+        Button button2 = findViewById(R.id.btn_scan_constraint);
+        button1.setOnClickListener(this);
+        button2.setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
         int permissionState = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
         if (permissionState == PackageManager.PERMISSION_GRANTED) {
-            startActivity(new Intent(MainActivity.this, ScanActivity.class));
+            Intent intent = new Intent(this, ScanActivity.class);
+            intent.putExtra("type", v.getId());
+            startActivity(intent);
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA},
-                    666);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 666);
         }
     }
 
