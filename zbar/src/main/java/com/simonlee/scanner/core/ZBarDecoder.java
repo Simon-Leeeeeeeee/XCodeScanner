@@ -96,7 +96,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
 
     private ExecutorService mExecutorService;
 
-    private final String TAG = "Camera2Scanner";
+    private final String TAG = "Camera1Scanner";
 
     private final Object lock_Decode = new Object();//互斥锁
 
@@ -113,7 +113,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
     }
 
     @Override
-    public synchronized void decode(byte[] data, int width, int height, RectF frameRatioRect) {
+    public synchronized void decode(byte[] data, int width, int height, RectF frameRectRatio) {
         if (isDetached) return;
         if (mImageScanner == null) {
             mImageScanner = new ImageScanner();
@@ -130,7 +130,7 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
         if (mExecutorService == null) {
             mExecutorService = Executors.newSingleThreadExecutor();
         }
-        mExecutorService.execute(new DecodeRunnable(data, width, height, frameRatioRect));
+        mExecutorService.execute(new DecodeRunnable(data, width, height, frameRectRatio));
     }
 
     /**
@@ -176,15 +176,15 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
         deliverResult(msg.arg1, msg.arg2, (String) msg.obj);
     }
 
-    private SymbolSet ZBarDecode(byte[] data, int width, int height, RectF frameRatioRect) {
+    private SymbolSet ZBarDecode(byte[] data, int width, int height, RectF frameRectRatio) {
         synchronized (lock_Decode) {
             if (isDetached) return null;
             mZBarImage.setSize(width, height);
-            if (frameRatioRect != null && !frameRatioRect.isEmpty()) {
-                int frameLeft = (int) (frameRatioRect.left * width);
-                int frameTop = (int) (frameRatioRect.top * height);
-                int frameWidth = (int) (frameRatioRect.width() * width);
-                int frameHeight = (int) (frameRatioRect.height() * height);
+            if (frameRectRatio != null && !frameRectRatio.isEmpty()) {
+                int frameLeft = (int) (frameRectRatio.left * width);
+                int frameTop = (int) (frameRectRatio.top * height);
+                int frameWidth = (int) (frameRectRatio.width() * width);
+                int frameHeight = (int) (frameRectRatio.height() * height);
                 mZBarImage.setCrop(frameLeft, frameTop, frameWidth, frameHeight);
             }
             mZBarImage.setData(data);
@@ -200,18 +200,18 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
         private final byte[] data;
         private final int width;
         private final int height;
-        private final RectF frameRatioRect;
+        private final RectF frameRectRatio;
 
-        private DecodeRunnable(byte[] data, int width, int height, RectF frameRatioRect) {
+        private DecodeRunnable(byte[] data, int width, int height, RectF frameRectRatio) {
             this.data = data;
             this.width = width;
             this.height = height;
-            this.frameRatioRect = frameRatioRect;
+            this.frameRectRatio = frameRectRatio;
         }
 
         @Override
         public void run() {
-            SymbolSet symbolSet = ZBarDecode(data, width, height, frameRatioRect);
+            SymbolSet symbolSet = ZBarDecode(data, width, height, frameRectRatio);
             if (symbolSet == null) return;
             for (Symbol symbol : symbolSet) {
                 String result = symbol.getData();

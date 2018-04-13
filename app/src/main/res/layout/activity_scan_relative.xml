@@ -4,11 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.simonlee.scanner.view.AutoFitTextureView
+    <com.simonlee.scanner.view.AdjustTextureView
         android:id="@+id/textureview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:backgroundTint="@color/black" />
+        android:layout_height="match_parent" />
 
     <com.simonlee.scanner.view.ScannerFrameView
         android:id="@+id/scannerframe"

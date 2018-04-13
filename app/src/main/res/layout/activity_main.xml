@@ -11,8 +11,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
-            android:layout_marginStart="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="10dp"
             android:layout_marginTop="20dp"
             android:text="@string/instructions_title"
             android:textColor="@color/black"
@@ -22,8 +22,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
-            android:layout_marginEnd="10dp"
-            android:layout_marginStart="30dp"
+            android:layout_marginLeft="30dp"
+            android:layout_marginRight="10dp"
             android:layout_marginTop="10dp"
             android:text="@string/instructions_content"
             android:textColor="@color/black"
@@ -33,7 +33,7 @@
             android:id="@+id/btn_scan_relative"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
+            android:layout_marginLeft="10dp"
             android:text="@string/scan_relative" />
 
         <Button
@@ -41,7 +41,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
-            android:layout_marginStart="10dp"
+            android:layout_marginLeft="10dp"
             android:text="@string/scan_constraint" />
+
     </LinearLayout>
 </ScrollView>

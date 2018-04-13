@@ -33,12 +33,8 @@ public class BaseHandler extends Handler {
         }
     }
 
-    public void removeAll() {
-        removeCallbacksAndMessages(null);
-    }
-
     public void clear() {
-        removeAll();
+        removeCallbacksAndMessages(null);
         if (weakReference != null) {
             weakReference.clear();
             weakReference = null;

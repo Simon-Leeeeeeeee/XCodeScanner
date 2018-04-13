@@ -4,10 +4,10 @@ android {
     compileSdkVersion 27
     defaultConfig {
         applicationId "com.demo.camera2"
-        minSdkVersion 21
+        minSdkVersion 14
         targetSdkVersion 27
-        versionCode 7
-        versionName "1.0.7"
+        versionCode 8
+        versionName "1.0.8"
     }
     buildTypes {
         release {
@@ -19,6 +19,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:27.1.0'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0-beta6'
     compile project(':zbar')
 }

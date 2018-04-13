@@ -1,30 +1,33 @@
 package com.demo.camera2;
 
 import android.graphics.SurfaceTexture;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.TextureView;
 
-import com.simonlee.scanner.core.Camera2Scanner;
+import com.simonlee.scanner.core.CameraScanner;
 import com.simonlee.scanner.core.GraphicDecoder;
+import com.simonlee.scanner.core.NewCameraScanner;
+import com.simonlee.scanner.core.OldCameraScanner;
 import com.simonlee.scanner.core.ZBarDecoder;
-import com.simonlee.scanner.view.AutoFitTextureView;
+import com.simonlee.scanner.view.AdjustTextureView;
 import com.simonlee.scanner.view.ScannerFrameView;
 
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  */
-public class ScanActivity extends AppCompatActivity implements Camera2Scanner.CameraDeviceListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener {
+public class ScanActivity extends AppCompatActivity implements CameraScanner.CameraDeviceListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener {
 
-    private AutoFitTextureView mTextureView;
+    private AdjustTextureView mTextureView;
     private ScannerFrameView mScannerFrameView;
 
-    private Camera2Scanner mCameraScanner;
+    private CameraScanner mCameraScanner;
     private ZBarDecoder mZBarDecoder;
 
-    private final String TAG = "Camera2Scanner";
+    private final String TAG = "CameraScanner";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -35,25 +38,38 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
         mScannerFrameView = findViewById(R.id.scannerframe);
         mTextureView = findViewById(R.id.textureview);
 
-        mCameraScanner = new Camera2Scanner(this);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            mCameraScanner = OldCameraScanner.getInstance();
+        } else {
+            mCameraScanner = NewCameraScanner.getInstance();
+        }
+
         mCameraScanner.setCameraDeviceListener(this);
         mTextureView.setSurfaceTextureListener(this);
     }
 
     @Override
     protected void onRestart() {
-        mCameraScanner.openCamera();
+        if (mTextureView.isAvailable()) {
+            //部分机型转到后台不会走onSurfaceTextureDestroyed()，因此isAvailable()一直为true，转到前台后不会再调用onSurfaceTextureAvailable()
+            //因此需要手动开启相机
+            mCameraScanner.setSurfaceTexture(mTextureView.getSurfaceTexture());
+            mCameraScanner.setPreviewSize(mTextureView.getWidth(), mTextureView.getHeight());
+            mCameraScanner.openCamera(this.getApplicationContext());
+        }
         super.onRestart();
     }
 
     @Override
-    protected void onStop() {
+    protected void onPause() {
+        Log.d(TAG, getClass().getName() + ".onPause()");
         mCameraScanner.closeCamera();
-        super.onStop();
+        super.onPause();
     }
 
     @Override
     public void onDestroy() {
+        Log.d(TAG, getClass().getName() + ".onDestroy()");
         mCameraScanner.setGraphicDecoder(null);
         if (mZBarDecoder != null) {
             mZBarDecoder.detach();
@@ -63,18 +79,31 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
     }
 
     @Override
-    public void openCameraSuccess(int surfaceWidth, int surfaceHeight, int orientation) {
-        Log.d(TAG, getClass().getName() + ".openCameraSuccess()");
-        mTextureView.setAspectRatio(surfaceWidth, surfaceHeight, orientation);
+    public void openCameraSuccess(int frameWidth, int frameHeight, int frameDegree) {
+        Log.d(TAG, getClass().getName() + ".openCameraSuccess() frameWidth = " + frameWidth + " , frameHeight = " + frameHeight + " , frameDegree = " + frameDegree);
+        mTextureView.setImageFrameMatrix(frameWidth, frameHeight, frameDegree);
         if (mZBarDecoder == null) {
             mZBarDecoder = new ZBarDecoder(this);
         }
+        //该区域坐标为相对于父容器的左上角顶点。
+        //TODO 应考虑TextureView与ScannerFrameView的Margin与padding的情况
+        mCameraScanner.setFrameRect(mScannerFrameView.getLeft(), mScannerFrameView.getTop(), mScannerFrameView.getRight(), mScannerFrameView.getBottom());
         mCameraScanner.setGraphicDecoder(mZBarDecoder);
     }
 
     @Override
     public void openCameraError() {
         ToastHelper.showToast("出错了", ToastHelper.LENGTH_SHORT);
+    }
+
+    @Override
+    public void noCameraPermission() {
+        ToastHelper.showToast("没有权限", ToastHelper.LENGTH_SHORT);
+    }
+
+    @Override
+    public void cameraDisconnected() {
+        ToastHelper.showToast("断开了连接", ToastHelper.LENGTH_SHORT);
     }
 
     int mCount = 0;
@@ -99,34 +128,21 @@ public class ScanActivity extends AppCompatActivity implements Camera2Scanner.Ca
     }
 
     @Override
-    public void noCameraPermission() {
-        ToastHelper.showToast("没有权限", ToastHelper.LENGTH_SHORT);
-    }
-
-    @Override
-    public void cameraDisconnected() {
-        ToastHelper.showToast("断开了连接", ToastHelper.LENGTH_SHORT);
-    }
-
-    @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        Log.d(TAG, getClass().getName() + ".onSurfaceTextureAvailable() width = " + width + " , height = " + height);
-        mCameraScanner.setSurfaceHolder(surface);
+        Log.e(TAG, getClass().getName() + ".onSurfaceTextureAvailable() width = " + width + " , height = " + height);
+        mCameraScanner.setSurfaceTexture(surface);
         mCameraScanner.setPreviewSize(width, height);
-        mCameraScanner.setFrameRect(mScannerFrameView.getLeft(), mScannerFrameView.getTop(), mScannerFrameView.getRight(), mScannerFrameView.getBottom());
-        mCameraScanner.openCamera();
+        mCameraScanner.openCamera(this.getApplicationContext());
     }
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-        Log.d(TAG, getClass().getName() + ".onSurfaceTextureSizeChanged() width = " + width + " , height = " + height);
-        mCameraScanner.setSurfaceHolder(surface);
-        mCameraScanner.setPreviewSize(width, height);
-        mCameraScanner.setFrameRect(mScannerFrameView.getLeft(), mScannerFrameView.getTop(), mScannerFrameView.getRight(), mScannerFrameView.getBottom());
+        Log.e(TAG, getClass().getName() + ".onSurfaceTextureSizeChanged() width = " + width + " , height = " + height);
     }
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        Log.e(TAG, getClass().getName() + ".onSurfaceTextureDestroyed()");
         return true;
     }
 

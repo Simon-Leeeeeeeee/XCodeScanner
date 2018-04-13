@@ -17,7 +17,7 @@ public abstract class GraphicDecoder {
         this.mWeakReference = new WeakReference<>(listener);
     }
 
-    public abstract void decode(byte[] data, int width, int height, RectF frameRatioRect);
+    public abstract void decode(byte[] data, int width, int height, RectF frameRectRatio);
 
     protected final void deliverResult(int type, int quality, String result) {
         DecodeListener listener = mWeakReference.get();

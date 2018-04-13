@@ -7,19 +7,25 @@
 * [版本记录](#版本记录)
 
 ## 功能介绍
-Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，要求<font color=#0366d6>SDK21</font>及以上。 
+Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，要求<font color=#0366d6>SDK14</font>及以上。
 
--  使用camera2API
+-  API21及以上优先使用camera2API
 -  自动对焦
 -  扫码结果准确率高，可控制精度
 -  扫描界面可任意定制
 
 ## 更新计划
--  针对<font color=#0366d6>SDK21</font>及以上，优化camera2API的使用。
--  针对<font color=#0366d6>SDK21</font>以下，提供旧的cameraAPI的支持。
 -  增加Zxing支持。
 
 ## 版本记录
+
+-  V1.0.8   `2018/04/13`
+
+    1. `AutoFixTextureView`更名为`AdjustTextureView`，重写图像校正方式。
+    2. `Camera2Scanner`更名为`NewCameraScanner`。
+    3. 新增`OldCameraScanner`实现对`Android5.0`以下的支持。
+    4. 下调minSdkVersion至14。
+    5. 因图像校正重写，扫码框区域识别功能暂不可用，下个版本修复。
 
 -  V1.0.7   `2018/04/10`
 
