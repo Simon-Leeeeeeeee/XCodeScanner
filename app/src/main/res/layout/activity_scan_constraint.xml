@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.simonlee.scanner.view.MaskConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.simonlee.scanner.view.MaskConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -7,18 +8,46 @@
     <com.simonlee.scanner.view.AdjustTextureView
         android:id="@+id/textureview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <!--<View-->
+    <!--android:layout_width="1dp"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:background="@color/colorAccent"-->
+    <!--app:layout_constraintRight_toLeftOf="@id/textureview"/>-->
+
+    <!--<View-->
+    <!--android:layout_width="1dp"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:background="@color/colorAccent"-->
+    <!--app:layout_constraintLeft_toRightOf="@id/textureview"/>-->
+
+    <!--<View-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="1dp"-->
+    <!--android:background="@color/colorAccent"-->
+    <!--app:layout_constraintTop_toBottomOf="@id/textureview"/>-->
+
+    <!--<View-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="1dp"-->
+    <!--android:background="@color/colorAccent"-->
+    <!--app:layout_constraintBottom_toTopOf="@id/textureview"/>-->
 
     <com.simonlee.scanner.view.ScannerFrameView
         android:id="@+id/scannerframe"
-        android:layout_width="400dp"
-        android:layout_height="400dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.33"
-        app:scan_cycle="1500" />
+        app:scan_cycle="1500"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -30,6 +59,6 @@
         android:textColor="@color/gray"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/scannerframe" />
+        app:layout_constraintTop_toBottomOf="@id/scannerframe"/>
 
 </com.simonlee.scanner.view.MaskConstraintLayout>

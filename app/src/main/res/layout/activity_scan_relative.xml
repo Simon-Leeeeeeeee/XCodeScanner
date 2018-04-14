@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.simonlee.scanner.view.MaskRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.simonlee.scanner.view.MaskRelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -7,7 +8,31 @@
     <com.simonlee.scanner.view.AdjustTextureView
         android:id="@+id/textureview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"/>
+
+    <!--<View-->
+    <!--android:layout_width="1dp"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:layout_toLeftOf="@id/textureview"-->
+    <!--android:background="@color/colorAccent"/>-->
+
+    <!--<View-->
+    <!--android:layout_width="1dp"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:layout_toRightOf="@id/textureview"-->
+    <!--android:background="@color/colorAccent"/>-->
+
+    <!--<View-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="1dp"-->
+    <!--android:layout_below="@id/textureview"-->
+    <!--android:background="@color/colorAccent"/>-->
+
+    <!--<View-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="1dp"-->
+    <!--android:layout_above="@id/textureview"-->
+    <!--android:background="@color/colorAccent"/>-->
 
     <com.simonlee.scanner.view.ScannerFrameView
         android:id="@+id/scannerframe"
@@ -15,7 +40,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        app:scan_cycle="1500" />
+        app:scan_cycle="1500"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -26,6 +51,6 @@
         android:background="@color/gray2"
         android:padding="5dp"
         android:text="@string/tips_scan"
-        android:textColor="@color/gray" />
+        android:textColor="@color/gray"/>
 
 </com.simonlee.scanner.view.MaskRelativeLayout>

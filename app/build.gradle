@@ -6,8 +6,8 @@ android {
         applicationId "com.demo.camera2"
         minSdkVersion 14
         targetSdkVersion 27
-        versionCode 8
-        versionName "1.0.8"
+        versionCode 9
+        versionName "1.0.9"
     }
     buildTypes {
         release {

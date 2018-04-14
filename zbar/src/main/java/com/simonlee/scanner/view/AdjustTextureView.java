@@ -58,10 +58,10 @@ public class AdjustTextureView extends TextureView {
         matrix.setRotate(frameDegree, getWidth() * 0.5F, getHeight() * 0.5F);//以中心点进行旋转
         if (frameDegree % 180 == 0) {//未发生垂直旋转，仅需调整宽高的缩放
             if (width * frameHeight < frameWidth * height) {//判断宽高比，宽被压缩
-                Log.e("Scanner", getClass().getName() + ".setImageFrameMatrix()A XY = " + (1F * frameWidth * height / (width * frameHeight))+" : 1");
+                Log.e("Scanner", getClass().getName() + ".setImageFrameMatrix()A XY = " + (1F * frameWidth * height / (width * frameHeight)) + " : 1");
                 matrix.postScale(1F * frameWidth * height / (width * frameHeight), 1F, 0, 0);//将宽拉伸
             } else {//高被压缩
-                Log.e("Scanner", getClass().getName() + ".setImageFrameMatrix()B XY = "+"1 : "+(1F * width * frameHeight / (frameWidth * height)));
+                Log.e("Scanner", getClass().getName() + ".setImageFrameMatrix()B XY = " + "1 : " + (1F * width * frameHeight / (frameWidth * height)));
                 matrix.postScale(1F, 1F * width * frameHeight / (frameWidth * height), 0, 0);//将高拉伸
             }
         } else {//发生了垂直旋转，宽高都需要进行缩放，并且要进行平移操作（图像以左上角原点对齐）

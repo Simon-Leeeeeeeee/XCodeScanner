@@ -51,7 +51,7 @@ public interface CameraScanner {
 
     interface CameraDeviceListener {
 
-        void openCameraSuccess(int frameWidth, int frameHeight, int frameDegree);
+        void openCameraSuccess(int surfaceWidth, int surfaceHeight, int surfaceDegree);
 
         void openCameraError();
 

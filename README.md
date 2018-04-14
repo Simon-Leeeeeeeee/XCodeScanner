@@ -19,13 +19,25 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 
 ## 版本记录
 
+-  V1.0.9   `2018/04/14`
+
+    1. 解决`NewCameraScanner`扫描框区域识别异常的问题。
+    2. 解决连续快速旋转屏幕时`NewCameraScanner`异常的问题。
+
+    待解决：
+    1. 部分机型翻转屏幕时，页面发生旋转，但Activity未销毁重建，图像显示会出现异常。
+    2. `OldCameraScanner`扫描框区域识别依然存在问题。
+    3. `OldCameraScanner`的图像帧数据回调接口可能会抛出空指针异常。
+    4. `OldCameraScanner`的图像帧数据回调似乎存在较高延迟。
+
 -  V1.0.8   `2018/04/13`
 
     1. `AutoFixTextureView`更名为`AdjustTextureView`，重写图像校正方式。
     2. `Camera2Scanner`更名为`NewCameraScanner`。
     3. 新增`OldCameraScanner`实现对`Android5.0`以下的支持。
     4. 下调minSdkVersion至14。
-    5. 因图像校正重写，扫码框区域识别功能暂不可用，下个版本修复。
+    5. 解决前后台切换，横竖屏切换可能产生的异常。
+    6. `NewCameraScanner`中取消ImageReader的支持。
 
 -  V1.0.7   `2018/04/10`
 

@@ -31,6 +31,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, getClass().getName() + ".onCreate()");
         super.onCreate(savedInstanceState);
         int id = getIntent().getIntExtra("type", R.id.btn_scan_relative);
         setContentView(id == R.id.btn_scan_constraint ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
@@ -50,6 +51,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
 
     @Override
     protected void onRestart() {
+        Log.d(TAG, getClass().getName() + ".onRestart()");
         if (mTextureView.isAvailable()) {
             //部分机型转到后台不会走onSurfaceTextureDestroyed()，因此isAvailable()一直为true，转到前台后不会再调用onSurfaceTextureAvailable()
             //因此需要手动开启相机
@@ -80,7 +82,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
 
     @Override
     public void openCameraSuccess(int frameWidth, int frameHeight, int frameDegree) {
-        Log.d(TAG, getClass().getName() + ".openCameraSuccess() frameWidth = " + frameWidth + " , frameHeight = " + frameHeight + " , frameDegree = " + frameDegree);
+        Log.e(TAG, getClass().getName() + ".openCameraSuccess() frameWidth = " + frameWidth + " , frameHeight = " + frameHeight + " , frameDegree = " + frameDegree);
         mTextureView.setImageFrameMatrix(frameWidth, frameHeight, frameDegree);
         if (mZBarDecoder == null) {
             mZBarDecoder = new ZBarDecoder(this);
@@ -138,6 +140,10 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
         Log.e(TAG, getClass().getName() + ".onSurfaceTextureSizeChanged() width = " + width + " , height = " + height);
+        // TODO 当View大小发生变化时，要进行调整。
+//        mTextureView.setImageFrameMatrix();
+//        mCameraScanner.setPreviewSize(width, height);
+//        mCameraScanner.setFrameRect(mScannerFrameView.getLeft(), mScannerFrameView.getTop(), mScannerFrameView.getRight(), mScannerFrameView.getBottom());
     }
 
     @Override
