@@ -6,7 +6,7 @@ import android.graphics.SurfaceTexture;
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
- * @createdTime 2018-04-13 11:15
+ * @createdTime 2018-04-13
  */
 public interface CameraScanner {
 
@@ -33,9 +33,9 @@ public interface CameraScanner {
     void setSurfaceTexture(SurfaceTexture surfaceTexture);
 
     /**
-     * 设置相机设备监听器 TODO 方法名要改一改
+     * 设置相机事件监听
      */
-    void setCameraDeviceListener(CameraDeviceListener cameraDeviceListener);
+    void setCameraListener(CameraListener cameraListener);
 
     /**
      * 设置图像解码器
@@ -49,7 +49,7 @@ public interface CameraScanner {
      */
     void setFrameRect(int frameLeft, int frameTop, int frameRight, int frameBottom);
 
-    interface CameraDeviceListener {
+    interface CameraListener {
 
         void openCameraSuccess(int surfaceWidth, int surfaceHeight, int surfaceDegree);
 

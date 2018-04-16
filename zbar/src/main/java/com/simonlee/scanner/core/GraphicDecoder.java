@@ -9,29 +9,13 @@ import java.lang.ref.WeakReference;
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  */
-public abstract class GraphicDecoder {
+public interface GraphicDecoder {
 
-    private final WeakReference<DecodeListener> mWeakReference;//弱引用，防止内存泄漏
+    void decode(byte[] frameData, int width, int height, RectF rectClipRatio);
 
-    public GraphicDecoder(DecodeListener listener) {
-        this.mWeakReference = new WeakReference<>(listener);
-    }
+    void detach();
 
-    public abstract void decode(byte[] data, int width, int height, RectF frameRectRatio);
-
-    protected final void deliverResult(int type, int quality, String result) {
-        DecodeListener listener = mWeakReference.get();
-        if (listener != null) {
-            listener.decodeSuccess(type, quality, result);
-        }
-    }
-
-    @CallSuper
-    public void detach() {
-        mWeakReference.clear();
-    }
-
-    public interface DecodeListener {
+    interface DecodeListener {
         void decodeSuccess(int type, int quality, String result);
     }
 

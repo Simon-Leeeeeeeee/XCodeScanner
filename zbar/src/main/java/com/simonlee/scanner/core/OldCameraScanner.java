@@ -45,13 +45,13 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private Size mSurfaceSize;//图像帧的尺寸
     private Size mPreviewSize;//预览View的尺寸
-    private RectF mFrameRectRatio;//扫码框区域相对于图像帧所占比例，且已根据mOrientation做校正
+    private RectF mRectClipRatio;//扫码框区域相对于图像帧所占比例，且已根据mOrientation做校正
 
     private BaseHandler mCurThreadHandler;//实例化线程对应的handler
     private BaseHandler mBackgroundHandler;//子线程对应的handler
     private HandlerThread mBackgroundThread;//子线程
 
-    private CameraDeviceListener mCameraDeviceListener;//相机设备回调
+    private CameraListener mCameraListener;//相机设备回调
 
     private Semaphore mCameraLock;
 
@@ -77,7 +77,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
     public void openCamera(Context context) {
         final Context finalContext = context.getApplicationContext();
         startBackgroundThread();
-        fetchOrientation(finalContext);//获取设备方向
+        takeOrientation(finalContext);//获取设备方向
         if (mCameraLock == null) mCameraLock = new Semaphore(1);
         mBackgroundHandler.post(new Runnable() {
             @Override
@@ -151,9 +151,9 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
             mGraphicDecoder.detach();
             mGraphicDecoder = null;
         }
-        mCameraDeviceListener = null;
+        mCameraListener = null;
         mPreviewCallback = null;
-        mFrameRectRatio = null;
+        mRectClipRatio = null;
         mSurfaceSize = null;
         mPreviewSize = null;
         mCameraLock = null;
@@ -171,8 +171,8 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
     }
 
     @Override
-    public void setCameraDeviceListener(CameraDeviceListener cameraDeviceListener) {
-        this.mCameraDeviceListener = cameraDeviceListener;
+    public void setCameraListener(CameraListener cameraListener) {
+        this.mCameraListener = cameraListener;
     }
 
     @Override
@@ -182,96 +182,53 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     @Override
     public void setFrameRect(int frameLeft, int frameTop, int frameRight, int frameBottom) {
-
-        Log.e(TAG, getClass().getName() + ".setFrameRect() mOrientation = " + mOrientation + " 上下左右：" + frameTop + " / " + frameBottom
-                + " / " + frameLeft + " / " + frameRight);
-        if (mFrameRectRatio == null) {
-            mFrameRectRatio = new RectF();
+        Log.d(TAG, getClass().getName() + ".setFrameRect() mOrientation = " + mOrientation + " frameRect = " + frameLeft + "-" + frameTop
+                + "-" + frameRight + "-" + frameBottom);
+        if (mRectClipRatio == null) {
+            mRectClipRatio = new RectF();
         }
         if (frameLeft >= frameRight || frameTop >= frameBottom) {
-            mFrameRectRatio.setEmpty();
+            mRectClipRatio.setEmpty();
             return;
         }
         int previewWidth = mPreviewSize.getWidth();
         int previewHeight = mPreviewSize.getHeight();
         int surfaceWidth = mSurfaceSize.getWidth();
         int surfaceHeight = mSurfaceSize.getHeight();
-        Log.e(TAG, getClass().getName() + ".setFrameRect() previewWh = " + previewWidth + "X" + previewHeight + " , surfaceWH = " + surfaceWidth
-                + "X" + surfaceHeight);
         if (mOrientation % 2 == 0) {
             int temp = surfaceWidth;
             surfaceWidth = surfaceHeight;
             surfaceHeight = temp;
         }
-        float ratio;
+        float ratio;//图像帧的缩放比，比如1000*2000像素的图像显示在100*200的View上，缩放比就是10
         if (previewWidth * surfaceHeight < surfaceWidth * previewHeight) {//图像帧的宽超出了View的左边，以高计算缩放比例
-            Log.e(TAG, getClass().getName() + ".setFrameRect() A surfaceHeight = " + surfaceHeight + " , previewHeight = " + previewHeight);
             ratio = 1F * surfaceHeight / previewHeight;
-            Log.e(TAG, getClass().getName() + ".setFrameRect() A ratio = " + ratio);
         } else {//图像帧的高超出了View的底边，以宽计算缩放比例
             ratio = 1F * surfaceWidth / previewWidth;
-            Log.e(TAG, getClass().getName() + ".setFrameRect() B ratio = " + ratio);
         }
-        float leftRatio = calculateRatio(ratio * frameLeft / surfaceWidth);
-        float rightRatio = calculateRatio(ratio * frameRight / surfaceWidth);
-        float topRatio = calculateRatio(ratio * frameTop / surfaceHeight);
-        float bottomRatio = calculateRatio(ratio * frameBottom / surfaceHeight);
-
-
-        switch (mOrientation) {
+        float leftRatio = calculateRatio(ratio * frameLeft / surfaceWidth);//计算扫描框的左边在图像帧中所处的位置
+        float rightRatio = calculateRatio(ratio * frameRight / surfaceWidth);//计算扫描框的右边在图像帧中所处的位置
+        float topRatio = calculateRatio(ratio * frameTop / surfaceHeight);//计算扫描框的顶边在图像帧中所处的位置
+        float bottomRatio = calculateRatio(ratio * frameBottom / surfaceHeight);//计算扫描框的底边在图像帧中所处的位置
+        switch (mOrientation) {//根据旋转角度对位置进行校正
             case Surface.ROTATION_0: {
-                mFrameRectRatio.set(topRatio, 1 - rightRatio, bottomRatio, 1 - leftRatio);
+                mRectClipRatio.set(topRatio, 1 - rightRatio, bottomRatio, 1 - leftRatio);
                 break;
             }
             case Surface.ROTATION_90: {
-                mFrameRectRatio.set(leftRatio, topRatio, rightRatio, bottomRatio);
+                mRectClipRatio.set(leftRatio, topRatio, rightRatio, bottomRatio);
                 break;
             }
             case Surface.ROTATION_180: {
-                mFrameRectRatio.set(1 - bottomRatio, leftRatio, 1 - topRatio, rightRatio);
+                mRectClipRatio.set(1 - bottomRatio, leftRatio, 1 - topRatio, rightRatio);
                 break;
             }
             case Surface.ROTATION_270: {
-                mFrameRectRatio.set(1 - rightRatio, 1 - bottomRatio, 1 - leftRatio, 1 - topRatio);
+                mRectClipRatio.set(1 - rightRatio, 1 - bottomRatio, 1 - leftRatio, 1 - topRatio);
                 break;
             }
         }
-        Log.e(TAG, getClass().getName() + ".setFrameRectRatio() mFrameRectRatio = " + mFrameRectRatio);
-
-
-//        if (mFrameRectRatio == null) {
-//            mFrameRectRatio = new RectF();
-//        }
-//        if (frameLeft >= frameRight || frameTop >= frameBottom) {
-//            mFrameRectRatio.setEmpty();
-//            return;
-//        }
-//        float width = mSurfaceSize.getWidth();
-//        float height = mSurfaceSize.getHeight();
-//        float leftRatio = calculateRatio(frameLeft / width);
-//        float rightRatio = calculateRatio(frameRight / width);
-//        float topRatio = calculateRatio(frameTop / height);
-//        float bottomRatio = calculateRatio(frameBottom / height);
-//
-//        switch (mOrientation) {//TODO 方向可能有问题
-//            case Surface.ROTATION_0: {
-//                mFrameRectRatio.set(topRatio, 1 - rightRatio, bottomRatio, 1 - leftRatio);
-//                break;
-//            }
-//            case Surface.ROTATION_90: {
-//                mFrameRectRatio.set(leftRatio, topRatio, rightRatio, bottomRatio);
-//                break;
-//            }
-//            case Surface.ROTATION_180: {
-//                mFrameRectRatio.set(1 - bottomRatio, leftRatio, 1 - topRatio, rightRatio);
-//                break;
-//            }
-//            case Surface.ROTATION_270: {
-//                mFrameRectRatio.set(1 - rightRatio, 1 - bottomRatio, 1 - leftRatio, 1 - topRatio);
-//                break;
-//            }
-//        }
-//        Log.d(TAG, getClass().getName() + ".setFrameRectRatio() mFrameRectRatio = " + mFrameRectRatio);
+        Log.d(TAG, getClass().getName() + ".setFrameRect() mRectClipRatio = " + mRectClipRatio);
     }
 
     private void startBackgroundThread() {
@@ -306,7 +263,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
     /**
      * 获取window方向
      */
-    private void fetchOrientation(Context context) {
+    private void takeOrientation(Context context) {
         //TODO 这个方向，应该使用
 //        Camera.CameraInfo info = new Camera.CameraInfo();
 //        Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, info);
@@ -317,7 +274,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         if (windowManager != null) {
             mOrientation = windowManager.getDefaultDisplay().getRotation();
         }
-        Log.d(TAG, getClass().getName() + ".fetchOrientation() mOrientation = " + mOrientation);
+        Log.d(TAG, getClass().getName() + ".takeOrientation() mOrientation = " + mOrientation);
     }
 
     private float calculateRatio(float ratio) {
@@ -337,10 +294,10 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
      * 初始化图像帧的尺寸大小
      */
     private void initSurfaceSize(List<Camera.Size> sizeList, int previewWidth, int previewHeight) {
-        if (mOrientation == Surface.ROTATION_0 || mOrientation == Surface.ROTATION_180) {//TODO 这里可能要改
-            mSurfaceSize = getBigEnoughSize(sizeList, previewHeight, previewWidth);
-        } else {
+        if (mOrientation == Surface.ROTATION_0 || mOrientation == Surface.ROTATION_180) {
             mSurfaceSize = getBigEnoughSize(sizeList, previewWidth, previewHeight);
+        } else {
+            mSurfaceSize = getBigEnoughSize(sizeList, previewHeight, previewWidth);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
             mSurfaceTexture.setDefaultBufferSize(mSurfaceSize.getWidth(), mSurfaceSize.getHeight());
@@ -376,12 +333,11 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
             mPreviewCallback = new Camera.PreviewCallback() {
                 @Override
                 public void onPreviewFrame(byte[] frameData, Camera camera) {
-                    if (frameData == null) {
-                        Log.e(TAG, getClass().getName() + ".onPreviewFrame() fuck");
-                    }
-                    Log.e(TAG, getClass().getName() + ".onPreviewFrame() frameData.length = " + frameData.length);
                     if (mGraphicDecoder != null) {
-                        mGraphicDecoder.decode(frameData, mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), mFrameRectRatio);
+                        if (mRectClipRatio == null || mRectClipRatio.isEmpty()) {//当未设置图像识别剪裁时，应以View的大小进行设置，防止未显示的图像被误识别
+                            setFrameRect(0, 0, mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                        }
+                        mGraphicDecoder.decode(frameData, mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), mRectClipRatio);
                     }
                 }
             };
@@ -393,8 +349,8 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
     public void handleMessage(Message msg) {
         switch (msg.what) {
             case HANDLER_SUCCESS_OPEN: {//开启成功
-                if (mCameraDeviceListener != null) {
-                    mCameraDeviceListener.openCameraSuccess(mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), (5 - mOrientation) % 4 * 90);
+                if (mCameraListener != null) {
+                    mCameraListener.openCameraSuccess(mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), (5 - mOrientation) % 4 * 90);
                 }
                 break;
             }
@@ -405,22 +361,22 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
             case HANDLER_FAIL_OPEN://开启失败
             case HANDLER_FAIL_CONFIG: {//配置失败
                 closeCamera();
-                if (mCameraDeviceListener != null) {
-                    mCameraDeviceListener.openCameraError();
+                if (mCameraListener != null) {
+                    mCameraListener.openCameraError();
                 }
                 break;
             }
             case HANDLER_FAIL_DISCONNECTED: {//断开连接
                 closeCamera();
-                if (mCameraDeviceListener != null) {
-                    mCameraDeviceListener.cameraDisconnected();
+                if (mCameraListener != null) {
+                    mCameraListener.cameraDisconnected();
                 }
                 break;
             }
             case HANDLER_FAIL_NO_PERMISSION: {//没有权限
                 closeCamera();
-                if (mCameraDeviceListener != null) {
-                    mCameraDeviceListener.noCameraPermission();
+                if (mCameraListener != null) {
+                    mCameraListener.noCameraPermission();
                 }
                 break;
             }

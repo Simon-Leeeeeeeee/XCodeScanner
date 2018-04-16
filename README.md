@@ -1,4 +1,4 @@
-:star2: Camera2Scanner
+:star2: CameraScanner
 ============================
 
 ## 目录
@@ -11,24 +11,30 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 
 -  API21及以上优先使用camera2API
 -  自动对焦
--  扫码结果准确率高，可控制精度
+-  扫码结果准确率高，可控制精度及扫码类型
 -  扫描界面可任意定制
+-  前后台&横竖屏可任意切换
+-  支持扫码框内区域之别
+-  页面响应迅速，兼容性良好
 
 ## 更新计划
+-  解决TextureView尺寸变化及padding&margin带来的一些问题。
+-  增加环境亮度监测，提示闪光灯开启。
+-  增加本地图片识别功能。
 -  增加Zxing支持。
+-  增加二维码生成功能。
 
 ## 版本记录
+
+-  V1.1.0   `2018/04/16`
+
+    1. 重写`ZBarDecoder`，解决单线程池可能引起的条码解析延迟问题。
+    2. 解决`OldCameraScanner`扫描框区域识别异常的问题。
 
 -  V1.0.9   `2018/04/14`
 
     1. 解决`NewCameraScanner`扫描框区域识别异常的问题。
-    2. 解决连续快速旋转屏幕时`NewCameraScanner`异常的问题。
-
-    待解决：
-    1. 部分机型翻转屏幕时，页面发生旋转，但Activity未销毁重建，图像显示会出现异常。
-    2. `OldCameraScanner`扫描框区域识别依然存在问题。
-    3. `OldCameraScanner`的图像帧数据回调接口可能会抛出空指针异常。
-    4. `OldCameraScanner`的图像帧数据回调似乎存在较高延迟。
+    2. 解决连续快速旋转屏幕时`NewCameraScanner`出现异常的问题。
 
 -  V1.0.8   `2018/04/13`
 

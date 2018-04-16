@@ -10,7 +10,6 @@ import android.view.TextureView;
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  */
-
 @SuppressWarnings("unused")
 public class AdjustTextureView extends TextureView {
 
@@ -45,6 +44,7 @@ public class AdjustTextureView extends TextureView {
      * @param frameDegree 图像帧需要旋转的角度(0/90/180/270)
      */
     public void setImageFrameMatrix(int frameWidth, int frameHeight, int frameDegree) {
+        Log.e("Scanner", getClass().getName() + ".setImageFrameMatrix() frameWH = " + frameWidth+"x"+frameHeight+" , frameDegree = "+frameDegree);
         if (frameWidth <= 0 || frameHeight <= 0) return;
         mFrameWidth = frameWidth;
         mFrameHeight = frameHeight;

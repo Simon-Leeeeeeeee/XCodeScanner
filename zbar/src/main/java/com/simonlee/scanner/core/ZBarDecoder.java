@@ -10,9 +10,6 @@ import net.sourceforge.zbar.ImageScanner;
 import net.sourceforge.zbar.Symbol;
 import net.sourceforge.zbar.SymbolSet;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
@@ -24,7 +21,7 @@ import java.util.concurrent.Executors;
  */
 
 @SuppressWarnings("unused")
-public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandlerListener {
+public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.BaseHandlerListener {
 
     /**
      * Symbol detected but not decoded.
@@ -94,47 +91,93 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
     private Image mZBarImage;
     private ImageScanner mImageScanner;
 
-    private ExecutorService mExecutorService;
+    private final String TAG = "CameraScanner";
 
-    private final String TAG = "Camera1Scanner";
-
-    private final Object lock_Decode = new Object();//互斥锁
+    private final Object decodeLock = new Object();//互斥锁
 
     private int[] mSymbolTypes;//要识别的条码格式
 
-    private final BaseHandler mHandler;
+    private final BaseHandler mCurThreadHandler;
 
-    private volatile boolean isDetached;
+    private volatile boolean running = true;
+
+    private volatile boolean frameAvailable = false;
+
+    private volatile byte[] mFrameData;
+    private volatile int mWidth;
+    private volatile int mHeight;
+    private volatile RectF mRectClipRatio;
+
+    private final DecodeListener mDecodeListener;
 
     public ZBarDecoder(DecodeListener listener) {
-        super(listener);
-        this.mHandler = new BaseHandler(this);
-        this.isDetached = false;
+        this.mCurThreadHandler = new BaseHandler(this);
+        this.mDecodeListener = listener;
+        super.start();
     }
 
     @Override
-    public synchronized void decode(byte[] data, int width, int height, RectF frameRectRatio) {
-        if (isDetached) return;
-        if (mImageScanner == null) {
-            mImageScanner = new ImageScanner();
-            mImageScanner.setConfig(0, Config.X_DENSITY, 3);
-            mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
-            mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the Symbols
-            for (int symbolType : getSymbolTypes()) {
-                mImageScanner.setConfig(symbolType, Config.ENABLE, 1);//Only symbolType is enable
+    public synchronized void decode(byte[] frameData, int width, int height, RectF rectClipRatio) {
+        if (!running) return;
+        mFrameData = frameData;
+        mWidth = width;
+        mHeight = height;
+        mRectClipRatio = rectClipRatio;
+        frameAvailable = true;
+    }
+
+    @Override
+    public synchronized void detach() {
+        running = false;
+        synchronized (decodeLock) {
+            if (mZBarImage != null) {
+                mZBarImage.destroy();
+                mZBarImage = null;
+            }
+            if (mImageScanner != null) {
+                mImageScanner.destroy();
+                mImageScanner = null;
             }
         }
-        if (mZBarImage == null) {
-            mZBarImage = new Image("Y800");
+    }
+
+    @Override
+    public final synchronized void start() {
+    }
+
+    @Override
+    public void run() {
+        init();
+        while (running) {//循环
+            if (frameAvailable) {
+                SymbolSet symbolSet;
+                //1.解析图像
+                synchronized (decodeLock) {
+                    symbolSet = decodeImage(mFrameData, mWidth, mHeight, mRectClipRatio);
+                }
+                //2.分析结果
+                takeResult(symbolSet);
+                frameAvailable = false;
+            }
         }
-        if (mExecutorService == null) {
-            mExecutorService = Executors.newSingleThreadExecutor();
-        }
-        mExecutorService.execute(new DecodeRunnable(data, width, height, frameRectRatio));
     }
 
     /**
-     * 获取条码格式
+     * 初始化ImageScanner&Image
+     */
+    private void init() {
+        mImageScanner = new ImageScanner();
+        mImageScanner.setConfig(0, Config.X_DENSITY, 3);
+        mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
+        mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the Symbols
+        for (int symbolType : getSymbolTypes()) {
+            mImageScanner.setConfig(symbolType, Config.ENABLE, 1);//Only symbolType is enable
+        }
+        mZBarImage = new Image("Y800");
+    }
+
+    /**
+     * 获取支持的条码格式
      */
     public int[] getSymbolTypes() {
         if (mSymbolTypes == null) {
@@ -145,90 +188,60 @@ public class ZBarDecoder extends GraphicDecoder implements BaseHandler.BaseHandl
     }
 
     /**
-     * 设置条码格式
+     * 设置支持的条码格式
      */
     public void setSymbolTypes(int[] symbolTypes) {
         this.mSymbolTypes = symbolTypes;
     }
 
-    @Override
-    public synchronized void detach() {
-        synchronized (lock_Decode) {
-            isDetached = true;
-            if (mZBarImage != null) {
-                mZBarImage.destroy();
-                mZBarImage = null;
-            }
-            if (mImageScanner != null) {
-                mImageScanner.destroy();
-                mImageScanner = null;
-            }
-            if (mExecutorService != null) {
-                mExecutorService.shutdownNow();
-                mExecutorService = null;
-            }
+    /**
+     * 使用zbar解析图像，返回一个Symbol集合
+     *
+     * @param frameData     图像的byte数组
+     * @param width         图像的宽
+     * @param height        图像的高
+     * @param rectClipRatio 图像区域的剪裁比例
+     */
+    private SymbolSet decodeImage(byte[] frameData, int width, int height, RectF rectClipRatio) {
+        if (mZBarImage == null || mImageScanner == null || frameData == null) return null;
+        mZBarImage.setSize(width, height);
+        if (rectClipRatio != null && !rectClipRatio.isEmpty()) {
+            int frameLeft = (int) (rectClipRatio.left * width);
+            int frameTop = (int) (rectClipRatio.top * height);
+            int frameWidth = (int) (rectClipRatio.width() * width);
+            int frameHeight = (int) (rectClipRatio.height() * height);
+            mZBarImage.setCrop(frameLeft, frameTop, frameWidth, frameHeight);
         }
-        super.detach();
-    }
-
-    @Override
-    public void handleMessage(Message msg) {
-        deliverResult(msg.arg1, msg.arg2, (String) msg.obj);
-    }
-
-    private SymbolSet ZBarDecode(byte[] data, int width, int height, RectF frameRectRatio) {
-        synchronized (lock_Decode) {
-            if (isDetached) return null;
-            mZBarImage.setSize(width, height);
-            if (frameRectRatio != null && !frameRectRatio.isEmpty()) {
-                int frameLeft = (int) (frameRectRatio.left * width);
-                int frameTop = (int) (frameRectRatio.top * height);
-                int frameWidth = (int) (frameRectRatio.width() * width);
-                int frameHeight = (int) (frameRectRatio.height() * height);
-                mZBarImage.setCrop(frameLeft, frameTop, frameWidth, frameHeight);
-            }
-            mZBarImage.setData(data);
-            if (mImageScanner.scanImage(mZBarImage) != 0) {
-                return mImageScanner.getResults();
-            }
+        mZBarImage.setData(frameData);
+        if (mImageScanner.scanImage(mZBarImage) != 0) {
+            return mImageScanner.getResults();
         }
         return null;
     }
 
-    private class DecodeRunnable implements Runnable {
-
-        private final byte[] data;
-        private final int width;
-        private final int height;
-        private final RectF frameRectRatio;
-
-        private DecodeRunnable(byte[] data, int width, int height, RectF frameRectRatio) {
-            this.data = data;
-            this.width = width;
-            this.height = height;
-            this.frameRectRatio = frameRectRatio;
-        }
-
-        @Override
-        public void run() {
-            SymbolSet symbolSet = ZBarDecode(data, width, height, frameRectRatio);
-            if (symbolSet == null) return;
-            for (Symbol symbol : symbolSet) {
-                String result = symbol.getData();
-                if (result != null && result.length() > 0) {
-//                    byte[] dataBytes = symbol.getDataBytes();
-//                    int[] bounds = symbol.getBounds();
-//                    int count = symbol.getCount();
-                    int type = symbol.getType();
-                    int quality = symbol.getQuality();
-                    Log.d(TAG, getClass().getName() + ".zbarDecode() : type = " + type
-                            + " , quality = " + quality + " , result = " + result);
-                    mHandler.sendMessage(mHandler.obtainMessage(0, type, quality, result));
-                    break;
-                }
+    /**
+     * 从Symbol集合中获取结果
+     */
+    private void takeResult(SymbolSet symbolSet) {
+        if (symbolSet == null) return;
+        for (Symbol symbol : symbolSet) {
+            String result = symbol.getData();
+            if (result != null && result.length() > 0) {
+//                byte[] dataBytes = symbol.getDataBytes();
+//                int[] bounds = symbol.getBounds();
+//                int count = symbol.getCount();
+                int type = symbol.getType();
+                int quality = symbol.getQuality();
+                Log.d(TAG, getClass().getName() + ".zbarDecode() : type = " + type + " , quality = " + quality + " , result = " + result);
+                mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(0, type, quality, result));
+                break;
             }
         }
+    }
 
+    @Override
+    public void handleMessage(Message msg) {
+        mDecodeListener.decodeSuccess(msg.arg1, msg.arg2, (String) msg.obj);
     }
 
 }

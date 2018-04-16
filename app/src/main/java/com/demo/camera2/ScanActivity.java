@@ -19,7 +19,7 @@ import com.simonlee.scanner.view.ScannerFrameView;
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  */
-public class ScanActivity extends AppCompatActivity implements CameraScanner.CameraDeviceListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener {
+public class ScanActivity extends AppCompatActivity implements CameraScanner.CameraListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener {
 
     private AdjustTextureView mTextureView;
     private ScannerFrameView mScannerFrameView;
@@ -36,8 +36,8 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
         int id = getIntent().getIntExtra("type", R.id.btn_scan_relative);
         setContentView(id == R.id.btn_scan_constraint ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
 
-        mScannerFrameView = findViewById(R.id.scannerframe);
         mTextureView = findViewById(R.id.textureview);
+        mScannerFrameView = findViewById(R.id.scannerframe);
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             mCameraScanner = OldCameraScanner.getInstance();
@@ -45,7 +45,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
             mCameraScanner = NewCameraScanner.getInstance();
         }
 
-        mCameraScanner.setCameraDeviceListener(this);
+        mCameraScanner.setCameraListener(this);
         mTextureView.setSurfaceTextureListener(this);
     }
 
