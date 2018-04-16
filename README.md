@@ -3,6 +3,7 @@
 
 ## 目录
 * [功能介绍](#功能介绍)
+* [示例程序](#示例程序)
 * [更新计划](#更新计划)
 * [版本记录](#版本记录)
 
@@ -17,6 +18,12 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 -  支持扫码框内区域之别
 -  页面响应迅速，兼容性良好
 
+## 示例程序
+ [点击下载 CameraScanner.apk](https://fir.im/CameraScanner?release_id=5ad47a0fca87a824591d1e79&fir_source=fir&fir_campaign=im)或扫描下面的二维码安装
+
+![CameraScanner](https://github.com/Simon-Leeeeeeeee/CameraScanner/blob/master/demo.gif)
+![CameraScanner二维码](https://github.com/Simon-Leeeeeeeee/CameraScanner/blob/master/download.png)
+
 ## 更新计划
 -  解决TextureView尺寸变化及padding&margin带来的一些问题。
 -  增加环境亮度监测，提示闪光灯开启。
@@ -25,6 +32,11 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 -  增加二维码生成功能。
 
 ## 版本记录
+
+-  V1.1.1   `2018/04/16`
+
+    1. `ScannerFrameView`增加高占比属性，可设置相对父容器高的占比。
+    2. 修改包名为`com.simonlee.demo.camerascanner`。
 
 -  V1.1.0   `2018/04/16`
 

@@ -3,11 +3,11 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 27
     defaultConfig {
-        applicationId "com.demo.camera2"
+        applicationId "com.simonlee.demo.camerascanner"
         minSdkVersion 14
         targetSdkVersion 27
-        versionCode 10
-        versionName "1.1.0"
+        versionCode 11
+        versionName "1.1.1"
     }
     buildTypes {
         release {

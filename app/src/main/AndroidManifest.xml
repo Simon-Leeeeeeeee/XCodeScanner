@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.demo.camera2">
+    package="com.simonlee.demo.camerascanner">
 
     <uses-permission android:name="android.permission.CAMERA" /><!--相机-->
 
@@ -20,7 +20,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ScanActivity"
+            android:name="com.simonlee.demo.camerascanner.ScanActivity"
             android:launchMode="singleTask"
             android:theme="@style/BlackAppTheme" />
     </application>

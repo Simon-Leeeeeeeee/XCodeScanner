@@ -159,7 +159,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         mCameraLock = null;
     }
 
-    @Override//TODO 如果相机已经打开，这里应该重设相机参数
+    @Override
     public void setPreviewSize(int width, int height) {
         mPreviewSize = new Size(width, height);
         Log.d(TAG, getClass().getName() + ".setPreviewSize() mPreviewSize = " + mPreviewSize.toString());

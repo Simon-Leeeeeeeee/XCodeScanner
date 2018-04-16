@@ -7,8 +7,10 @@
         <attr name="android:layout_height" />
         <!-- 扫描框宽占比(相对父容器的宽) -->
         <attr name="frame_widthRatio" format="float|reference" />
-        <!-- 扫描框高宽比 -->
-        <attr name="frame_hwRatio" format="float|reference" />
+        <!-- 扫描框高占比(相对父容器的高) -->
+        <attr name="frame_heightRatio" format="float|reference" />
+        <!-- 扫描框宽高比 -->
+        <attr name="frame_whRatio" format="float|reference" />
 
         <!-- 边框是否显示 -->
         <attr name="frameLine_visible" format="boolean|reference" />

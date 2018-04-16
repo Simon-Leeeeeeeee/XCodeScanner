@@ -39,6 +39,8 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
+        app:frame_whRatio="1"
+        app:frame_widthRatio="0.7"
         app:scan_cycle="1500" />
 
     <TextView

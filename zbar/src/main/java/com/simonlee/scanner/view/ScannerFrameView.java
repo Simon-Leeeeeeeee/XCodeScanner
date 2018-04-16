@@ -19,7 +19,6 @@ import com.simonlee.scanner.R;
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  */
-
 @SuppressWarnings("unused")
 public final class ScannerFrameView extends View {
 
@@ -29,9 +28,14 @@ public final class ScannerFrameView extends View {
     private float mFrameWidthRatio;
 
     /**
-     * 扫描框高宽比（高/宽）
+     * 扫描框高占比（相对父容器的高）
      */
-    private float mFrameHWRatio;
+    private float mFrameHeightRatio;
+
+    /**
+     * 扫描框宽高比（宽/高）
+     */
+    private float mFrameWHRatio;
 
     /**
      * 边框是否显示
@@ -192,11 +196,15 @@ public final class ScannerFrameView extends View {
         this.mLayoutWidth = typedArray.getLayoutDimension(R.styleable.ScannerFrameView_android_layout_width, 0);//-2wrap_content -1match_parent
         this.mLayoutHeight = typedArray.getLayoutDimension(R.styleable.ScannerFrameView_android_layout_height, 0);//-2wrap_content -1match_parent
 
-        this.mFrameWidthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_widthRatio, 0.7F);
+        this.mFrameWidthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_widthRatio, 0);
         if (mFrameWidthRatio > 1) {
             mFrameWidthRatio = 1;
         }
-        this.mFrameHWRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_hwRatio, 1.0F);
+        this.mFrameHeightRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_heightRatio, 0);
+        if (mFrameHeightRatio > 1) {
+            mFrameHeightRatio = 1;
+        }
+        this.mFrameWHRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_whRatio, 0);
 
         this.isFrameCornerVisible = typedArray.getBoolean(R.styleable.ScannerFrameView_frameCorner_visible, true);
         this.mFrameCornerLength = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frameCorner_length, 0);
@@ -223,7 +231,7 @@ public final class ScannerFrameView extends View {
     @Override
     public void setLayoutParams(ViewGroup.LayoutParams params) {
         mLayoutWidth = params.width;
-        mLayoutHeight = params.width;
+        mLayoutHeight = params.height;
         super.setLayoutParams(params);
     }
 
@@ -233,11 +241,31 @@ public final class ScannerFrameView extends View {
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
-        if (mFrameWidthRatio > 0 && mLayoutWidth == ViewGroup.LayoutParams.WRAP_CONTENT && widthMode != MeasureSpec.EXACTLY) {
-            widthSize = (int) (widthSize * mFrameWidthRatio);
+        boolean needCalculateWidthAfter = false, needCalculateHeightAfter = false;
+        if (mLayoutWidth == ViewGroup.LayoutParams.WRAP_CONTENT && widthMode != MeasureSpec.EXACTLY) {//宽为WRAP
+            if (mFrameWidthRatio > 0) {//宽有父容器占比
+                widthSize = (int) (widthSize * mFrameWidthRatio);
+            } else if (mFrameWHRatio > 0) {//有宽高比，根据高来设置
+                needCalculateWidthAfter = true;
+            }
         }
-        if (mFrameHWRatio > 0 && mLayoutHeight == ViewGroup.LayoutParams.WRAP_CONTENT && heightMode != MeasureSpec.EXACTLY) {
-            heightSize = (int) (widthSize * mFrameHWRatio);
+        if (mLayoutHeight == ViewGroup.LayoutParams.WRAP_CONTENT && heightMode != MeasureSpec.EXACTLY) {//高为WRAP
+            if (mFrameHeightRatio > 0) {//高有父容器占比
+                heightSize = (int) (heightSize * mFrameHeightRatio);
+            } else if (mFrameWHRatio > 0) {//有宽高比，根据宽来设置
+                needCalculateHeightAfter = true;
+            }
+        }
+        if (needCalculateWidthAfter && needCalculateHeightAfter) {//宽和高均按宽高比来设置
+            if (mFrameWHRatio * heightSize > widthSize) {//目标宽高比大于View的宽高比，以宽为准
+                heightSize = (int) (widthSize / mFrameWHRatio);
+            } else {//以高为准
+                widthSize = (int) (heightSize * mFrameWHRatio);
+            }
+        } else if (needCalculateWidthAfter) {//宽按宽高比来设置
+            widthSize = (int) (heightSize * mFrameWHRatio);
+        } else if (needCalculateHeightAfter) {//高按宽高比来设置
+            heightSize = (int) (widthSize / mFrameWHRatio);
         }
         setMeasuredDimension(widthSize, heightSize);
         measureFrame();
@@ -391,7 +419,7 @@ public final class ScannerFrameView extends View {
     }
 
     /**
-     * 设置扫描宽占比（相对父容器的宽）
+     * 设置扫描框宽占比（相对父容器的宽）
      *
      * @param frameWidthRatio 宽占比
      */
@@ -403,12 +431,24 @@ public final class ScannerFrameView extends View {
     }
 
     /**
-     * 设置扫描框高宽比（高/宽）
+     * 设置扫描框高占比（相对父容器的高）
      *
-     * @param frameHWRatio 高宽比(height/width)
+     * @param frameHeightRatio 高占比
      */
-    public void setFrameHWRatio(float frameHWRatio) {
-        this.mFrameHWRatio = frameHWRatio;
+    public void setFrameHeightRatio(float frameHeightRatio) {
+        if (frameHeightRatio > 1) {
+            frameHeightRatio = 1;
+        }
+        this.mFrameHeightRatio = frameHeightRatio;
+    }
+
+    /**
+     * 设置扫描框宽高比（宽/高）
+     *
+     * @param frameWHRatio 宽高比(width/height)
+     */
+    public void setFrameWHRatio(float frameWHRatio) {
+        this.mFrameWHRatio = frameWHRatio;
     }
 
     /**

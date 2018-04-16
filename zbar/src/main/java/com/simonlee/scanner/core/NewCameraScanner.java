@@ -171,7 +171,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
      * 获取window方向
      */
     private void takeOrientation(Context context) {
-        //TODO 这个方向，应该使用
+        //TODO
 //        mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
 
         WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
