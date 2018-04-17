@@ -1,4 +1,4 @@
-package com.simonlee.demo.camerascanner;
+package com.simonlee.demo.codescanner;
 
 import android.app.Application;
 

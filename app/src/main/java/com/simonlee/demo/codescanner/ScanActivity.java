@@ -1,4 +1,4 @@
-package com.simonlee.demo.camerascanner;
+package com.simonlee.demo.codescanner;
 
 import android.graphics.SurfaceTexture;
 import android.os.Build;
@@ -27,7 +27,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     private CameraScanner mCameraScanner;
     private ZBarDecoder mZBarDecoder;
 
-    private final String TAG = "CameraScanner";
+    private final String TAG = "CodeScanner";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

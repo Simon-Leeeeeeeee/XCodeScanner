@@ -1,4 +1,4 @@
-:star2: CameraScanner
+:star2: CodeScanner
 ============================
 
 ## 目录
@@ -19,10 +19,10 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 -  页面响应迅速，兼容性良好
 
 ## 示例程序
- [点击下载 CameraScanner.apk](https://fir.im/CameraScanner?release_id=5ad47a0fca87a824591d1e79&fir_source=fir&fir_campaign=im)或扫描下面的二维码安装
+ [点击下载 CodeScanner.apk](http://fir.im/CodeScanner)或扫描下面的二维码安装
 
-![CameraScanner](https://github.com/Simon-Leeeeeeeee/CameraScanner/blob/master/demo.gif)
-![CameraScanner二维码](https://github.com/Simon-Leeeeeeeee/CameraScanner/blob/master/download.png)
+![CodeScanner演示gif](https://github.com/Simon-Leeeeeeeee/CodeScanner/blob/master/demo.gif)
+![CodeScanner.apk二维码](https://github.com/Simon-Leeeeeeeee/CodeScanner/blob/master/download.png)
 
 ## 更新计划
 -  解决TextureView尺寸变化及padding&margin带来的一些问题。

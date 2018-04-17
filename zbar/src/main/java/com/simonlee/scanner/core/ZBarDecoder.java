@@ -91,7 +91,7 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
     private Image mZBarImage;
     private ImageScanner mImageScanner;
 
-    private final String TAG = "CameraScanner";
+    private final String TAG = "CodeScanner";
 
     private final Object decodeLock = new Object();//互斥锁
 

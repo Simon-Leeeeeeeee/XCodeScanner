@@ -1,4 +1,4 @@
-package com.simonlee.demo.camerascanner;
+package com.simonlee.demo.codescanner;
 
 import android.annotation.SuppressLint;
 import android.support.annotation.StringRes;

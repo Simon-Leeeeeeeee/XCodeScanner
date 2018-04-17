@@ -1,4 +1,4 @@
-package com.simonlee.demo.camerascanner;
+package com.simonlee.demo.codescanner;
 
 import android.Manifest;
 import android.content.Intent;
