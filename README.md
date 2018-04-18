@@ -1,28 +1,55 @@
-:star2: CodeScanner
-============================
+# :star2:&nbsp;CodeScanner
 
+一个Android平台上用来解析条码及二维码的框架。目前采用zbar解析图像数据，兼容` API14 `及以上版本。
+
+|**Author**|**Simon Lee**|
+|---|---|
+|**E-mail**|**jmlixiaomeng@163.com**|
+
+****
 ## 目录
-* [功能介绍](#功能介绍)
+* [功能特色](#功能特色)
 * [示例程序](#示例程序)
+* [Gradle依赖](#gradle依赖)
 * [更新计划](#更新计划)
+* [接口说明](#接口说明)
 * [版本记录](#版本记录)
 
-## 功能介绍
-Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，要求<font color=#0366d6>SDK14</font>及以上。
+## 功能特色
 
--  API21及以上优先使用camera2API
--  自动对焦
--  扫码结果准确率高，可控制精度及扫码类型
--  扫描界面可任意定制
--  前后台&横竖屏可任意切换
--  支持扫码框内区域之别
--  页面响应迅速，兼容性良好
+1. 支持新旧两版CameraAPI
+
+2. zbar解码，更快更精准
+
+3. 扫码框随心定制，动画不卡顿
+
+4. layout任意尺寸，预览不变形
+
+5. camera异步开启，不占主线程
+
+6. 可配置扫码框内识别，精准无误差
+
+7. 前后台、横竖屏任意切，绝对不闪退
+
+8. TextureReader取代ImageReader，预览不丢帧
+
+9. ZBarDecoder支持图像格式及精度控制，过滤脏数据
+
+10. 自动对焦很简单，指哪扫哪
 
 ## 示例程序
- [点击下载 CodeScanner.apk](http://fir.im/CodeScanner)或扫描下面的二维码安装
 
-![CodeScanner演示gif](https://github.com/Simon-Leeeeeeeee/CodeScanner/blob/master/demo.gif)
-![CodeScanner.apk二维码](https://github.com/Simon-Leeeeeeeee/CodeScanner/blob/master/download.png)
+|Demo下载|示例效果|
+|:---:|:---:|
+|[点此下载](http://fir.im/CodeScanner) 或扫描下面二维码<br/>[![demo](/download.png)](http://fir.im/CodeScanner  "扫码下载示例程序")|[![gif](/demo.gif)](http://fir.im/CodeScanner  "示例效果")|
+
+## Gradle依赖
+
+在module的`build.gradle`中添加如下代码
+
+    dependencies {
+        implementation 'cn.simonlee.codescanner:zbar:1.1.1'
+    }
 
 ## 更新计划
 -  解决TextureView尺寸变化及padding&margin带来的一些问题。
@@ -30,6 +57,35 @@ Android平台基于[zBar](https://github.com/ZBar/ZBar)的开源扫码框架，�
 -  增加本地图片识别功能。
 -  增加Zxing支持。
 -  增加二维码生成功能。
+
+## 接口说明
+#### &nbsp;&nbsp;&nbsp;&nbsp;:cat:&nbsp;&nbsp;**AdjustTextureView**
+    继承自TextureView，用于渲染camera预览图像，可根据图像参数进行适配以解决形变问题
+|接口|功能说明|参数及返回值|备注|
+|:---:|:---:|:---:|:---:|
+|**setImageFrameMatrix(int frameWidth, int frameHeight, int frameDegree)**|根据图像帧宽高及角度进行显示校正|**frameWidth:** 图像帧的宽<br/>**frameHeight:** 图像帧的高<br/>**frameDegree:** 图像旋转角度|　　|
+|**setImageFrameMatrix()**|根据图像帧宽高及角度进行显示校正|||
+
+#### &nbsp;&nbsp;&nbsp;&nbsp;:dog:&nbsp;&nbsp;**ScannerFrameView**
+    继承自View，用于绘制扫描框
+|接口|功能说明|参数及返回值|备注|
+|:---:|:---:|:---:|:---:|
+|**setFrameWidthRatio(float frameWidthRatio)**|设置view宽占比（相对父容器的宽）|**frameWidthRatio:** 宽占比|仅宽为**wrap_content**时有效，xml中可通过**frame_widthRatio**属性配置|
+|**setFrameHeightRatio(float frameHeightRatio)**|设置view高占比（相对父容器的高）|**frameHeightRatio:** 高占比|仅高为**wrap_content**时有效，xml中可通过**frame_heightRatio**属性配置|
+|**setFrameWHRatio(float frameWHRatio)**|设置view宽高比|**frameWHRatio:** 宽高比|仅当宽或高为**wrap_content**且未设置父占比时有效，xml中可通过**frame_whRatio**属性配置|
+|**setFrameLineVisible(boolean frameLineVisible)**|设置是否显示边框|**frameLineVisible:** true显示/false隐藏|xml中可通过**frameLine_visible**属性配置|
+|**setFrameLineWidth(int frameLineWidth)**|设置边框宽度|**frameLineWidth:** 边框宽|xml中可通过**frameLine_width**属性配置|
+|**setFrameLineColor(int frameLineColor)**|设置边框颜色|**frameLineColor:** 十六进制色值|xml中可通过**frameLine_color**属性配置|
+
+    未完待续，近日完善。。
+    
+#### &nbsp;&nbsp;&nbsp;&nbsp;:dog:&nbsp;&nbsp;**MaskRelativeLayout**
+    继承自RelativeLayout，用于绘制扫描框外部阴影
+|接口|功能说明|参数及返回值|备注|
+|:---:|:---:|:---:|:---:|
+|**setFrameOutsideColor(int frameOutsideColor)**|设置扫描框外部填充色|**frameOutsideColor:** 十六进制色值|xml中可通过**frame_outsideColor**属性配置|
+
+    未完待续，近日完善。。
 
 ## 版本记录
 
