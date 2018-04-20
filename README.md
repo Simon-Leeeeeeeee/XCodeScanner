@@ -12,7 +12,12 @@
 * [示例程序](#示例程序)
 * [Gradle依赖](#gradle依赖)
 * [更新计划](#更新计划)
-* [接口说明](#接口说明)
+* [接口说明](#接口说明)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;[AdjustTextureView](#catadjusttextureview-查看源码)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;[ScannerFrameView](#dogscannerframeview-查看源码)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;[MaskRelativeLayout](#mousemaskrelativelayout-查看源码)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;[MaskConstraintLayout](#hamstermaskconstraintlayout-查看源码)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;[CameraScanner](#rabbitcamerascanner-查看源码)
 * [版本记录](#版本记录)
 
 ## 功能特色
@@ -59,31 +64,56 @@
 -  增加二维码生成功能。
 
 ## 接口说明
-#### &nbsp;&nbsp;&nbsp;&nbsp;:cat:&nbsp;&nbsp;**AdjustTextureView**
-    继承自TextureView，用于渲染camera预览图像，可根据图像参数进行适配以解决形变问题
+#### &nbsp;&nbsp;&nbsp;&nbsp;:cat:&nbsp;&nbsp;**AdjustTextureView** [查看源码](/zbar/src/main/java/com/simonlee/scanner/view/AdjustTextureView.java)
+    继承自TextureView，用于渲染camera预览图像，可根据图像参数进行适配以解决形变问题  [查看源码](/download.png)
 |接口|功能说明|参数及返回值|备注|
 |:---:|:---:|:---:|:---:|
 |**setImageFrameMatrix(int frameWidth, int frameHeight, int frameDegree)**|根据图像帧宽高及角度进行显示校正|**frameWidth:** 图像帧的宽<br/>**frameHeight:** 图像帧的高<br/>**frameDegree:** 图像旋转角度|　　|
 |**setImageFrameMatrix()**|根据图像帧宽高及角度进行显示校正|||
 
-#### &nbsp;&nbsp;&nbsp;&nbsp;:dog:&nbsp;&nbsp;**ScannerFrameView**
+#### &nbsp;&nbsp;&nbsp;&nbsp;:dog:&nbsp;&nbsp;**ScannerFrameView** [查看源码](/zbar/src/main/java/com/simonlee/scanner/view/ScannerFrameView.java)
     继承自View，用于绘制扫描框
 |接口|功能说明|参数及返回值|备注|
 |:---:|:---:|:---:|:---:|
-|**setFrameWidthRatio(float frameWidthRatio)**|设置view宽占比（相对父容器的宽）|**frameWidthRatio:** 宽占比|仅宽为**wrap_content**时有效，xml中可通过**frame_widthRatio**属性配置|
-|**setFrameHeightRatio(float frameHeightRatio)**|设置view高占比（相对父容器的高）|**frameHeightRatio:** 高占比|仅高为**wrap_content**时有效，xml中可通过**frame_heightRatio**属性配置|
-|**setFrameWHRatio(float frameWHRatio)**|设置view宽高比|**frameWHRatio:** 宽高比|仅当宽或高为**wrap_content**且未设置父占比时有效，xml中可通过**frame_whRatio**属性配置|
-|**setFrameLineVisible(boolean frameLineVisible)**|设置是否显示边框|**frameLineVisible:** true显示/false隐藏|xml中可通过**frameLine_visible**属性配置|
-|**setFrameLineWidth(int frameLineWidth)**|设置边框宽度|**frameLineWidth:** 边框宽|xml中可通过**frameLine_width**属性配置|
-|**setFrameLineColor(int frameLineColor)**|设置边框颜色|**frameLineColor:** 十六进制色值|xml中可通过**frameLine_color**属性配置|
-
-    未完待续，近日完善。。
+|**setFrameWidthRatio(float frameWidthRatio)**|设置view宽占比（相对父容器的宽）|**frameWidthRatio:** 宽占比|仅宽为wrap_content时有效，xml中可通过`frame_widthRatio`属性配置，默认值0|
+|**setFrameHeightRatio(float frameHeightRatio)**|设置view高占比（相对父容器的高）|**frameHeightRatio:** 高占比|仅高为wrap_content时有效，xml中可通过`frame_heightRatio`属性配置，默认值0|
+|**setFrameWHRatio(float frameWHRatio)**|设置view宽高比|**frameWHRatio:** 宽高比|仅当宽或高为wrap_content且未设置父占比时有效，xml中可通过`frame_whRatio`属性配置，默认值0|
+|**setFrameLineVisible(boolean frameLineVisible)**|设置是否显示边框|**frameLineVisible:** true显示/false隐藏|xml中可通过`frameLine_visible`属性配置|
+|**setFrameLineWidth(int frameLineWidth)**|设置边框宽度|**frameLineWidth:** 边框宽|xml中可通过`frameLine_width`属性配置，默认值1dp|
+|**setFrameLineColor(int frameLineColor)**|设置边框颜色|**frameLineColor:** 十六进制色值|xml中可通过`frameLine_color`属性配置，默认白色|
+|**setFrameCornerVisible(boolean frameCornerVisible)**|设置是否显示边角|**frameCornerVisible:** true显示/false隐藏|xml中可通过`frameCorner_visible`属性配置，默认true|
+|**setFrameCornerLength(int frameCornerLength)**|设置边角长度|**frameCornerLength:** 边角长|xml中可通过`frameCorner_length`属性配置，默认值0|
+|**setframeCornerLengthRatio(float frameCornerLengthRatio)**|设置边角长占比（相对View的宽）|**frameCornerLengthRatio:** 长占比|当未设置边角长度时有效，xml中可通过`frameCorner_lengthRatio`属性配置，默认值0.1|
+|**setFrameCornerWidth(int frameCornerWidth)**|设置边角宽度|**frameCornerWidth:** 边角宽|xml中可通过`frameCorner_width`属性配置，默认值3dp|
+|**setFrameCornerColor(int frameCornerColor)**|设置边角颜色|**frameCornerColor:** 十六进制色值|xml中可通过`frameCorner_color`属性配置，默认蓝色|
+|**setScanLineVisible(boolean scanLineVisible)**|设置是否显示扫描线|**scanLineVisible:** true显示/false隐藏|xml中可通过`scanLine_visible`属性配置，默认true|
+|**setScanLineDirection(int scanLineDirection)**|设置扫描线移动方向|**scanLineDirection:** 移动方向|xml中可通过`scanLine_direction`属性配置，默认向下移动|
+|**setScanLineLengthPadding(int scanLineLengthPadding)**|设置扫描线长度Padding|**scanLineLengthPadding:** padding值|xml中可通过`scanLine_lengthPadding`属性配置，默认-1|
+|**setScanLineLengthRatio(float scanLineLengthRatio)**|设置扫描线长占比（相对View的长/宽，由扫描方向决定）|**scanLineLengthRatio:** 长占比|当未设置长度padding时有效，xml中可通过`scanLine_lengthRatio`属性配置，默认值0.98|
+|**setScanLineWidth(int scanLineWidth)**|设置扫描线宽|**scanLineWidth:** 扫描线宽|xml中可通过`scanLine_width`属性配置，默认值2dp|
+|**setScanLineColor(int scanLineColor)**|设置扫描线颜色|**scanLineColor:** 十六进制色值|xml中可通过`scanLine_color`属性配置，默认蓝色|
+|**setScanLineCycle(int scanLineCycle)**|设置扫描线移动周期|**scanLineCycle:** 一个周期时长，单位ms|xml中可通过`scan_cycle`属性配置，默认值1500|
     
-#### &nbsp;&nbsp;&nbsp;&nbsp;:dog:&nbsp;&nbsp;**MaskRelativeLayout**
-    继承自RelativeLayout，用于绘制扫描框外部阴影
+#### &nbsp;&nbsp;&nbsp;&nbsp;:mouse:&nbsp;&nbsp;**MaskRelativeLayout** [查看源码](/zbar/src/main/java/com/simonlee/scanner/view/MaskRelativeLayout.java)
+    继承自RelativeLayout，用于绘制扫描框外部阴题
 |接口|功能说明|参数及返回值|备注|
 |:---:|:---:|:---:|:---:|
-|**setFrameOutsideColor(int frameOutsideColor)**|设置扫描框外部填充色|**frameOutsideColor:** 十六进制色值|xml中可通过**frame_outsideColor**属性配置|
+|**setFrameOutsideColor(int frameOutsideColor)**|设置扫描框外部填充色|**frameOutsideColor:** 十六进制色值|xml中可通过`frame_outsideColor`属性配置|
+    
+#### &nbsp;&nbsp;&nbsp;&nbsp;:hamster:&nbsp;&nbsp;**MaskConstraintLayout** [查看源码](/zbar/src/main/java/com/simonlee/scanner/view/MaskConstraintLayout.java)
+    继承自ConstraintLayout，用于绘制扫描框外部阴影
+|接口|功能说明|参数及返回值|备注|
+|:---:|:---:|:---:|:---:|
+|**setFrameOutsideColor(int frameOutsideColor)**|设置扫描框外部填充色|**frameOutsideColor:** 十六进制色值|xml中可通过`frame_outsideColor`属性配置|
+    
+#### &nbsp;&nbsp;&nbsp;&nbsp;:rabbit:&nbsp;&nbsp;**CameraScanner** [查看源码](/zbar/src/main/java/com/simonlee/scanner/core/CameraScanner.java)
+    camera接口类，对外提供camera支持，具体用法参考demo。
+    有两个实体类OldCameraScanner和NewCameraScanner，NewCameraScanner仅支持API21及以上。
+|接口|功能说明|参数及返回值|备注|
+|:---:|:---:|:---:|:---:|
+|**openCamera(Context context)**|开启相机|**context:** 上下文，建议传入ApplicationContext|　　|
+|**closeCamera()**|关闭相机|||
+|**setPreviewSize(int width, int height)**|传入预览View的尺寸|**width:** view的宽<br/>**height:** view的高|　　|
 
     未完待续，近日完善。。
 
