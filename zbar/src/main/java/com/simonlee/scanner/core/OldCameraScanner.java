@@ -39,7 +39,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private GraphicDecoder mGraphicDecoder;//图像解码器
 
-    private final String TAG = "CodeScanner";
+    private final String TAG = "XCodeScanner";
 
     private int mOrientation;//设备方向 0 朝上 1朝左 2朝下 3朝右
 

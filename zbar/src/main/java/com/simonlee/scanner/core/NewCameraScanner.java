@@ -48,7 +48,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private GraphicDecoder mGraphicDecoder;//图像解码器
 
-    private final String TAG = "CodeScanner";
+    private final String TAG = "XCodeScanner";
 
     private int mOrientation;//设备方向 0 朝上 1朝左 2朝下 3朝右
 
@@ -73,7 +73,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private CameraDevice.StateCallback mDeviceStateCallback;
     private CameraCaptureSession.StateCallback mSessionStateCallback;
-    private TextureReader.OnFrameAvailableListener mOnFrameAvailableListener;
+    private TextureReader.OnImageAvailableListener mOnImageAvailableListener;
 
     private final Semaphore mCameraLock;
 
@@ -212,9 +212,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         } else {
             mSurfaceSize = getBigEnoughSize(sizeArray, previewWidth, previewHeight);
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-            mSurfaceTexture.setDefaultBufferSize(mSurfaceSize.getWidth(), mSurfaceSize.getHeight());
-        }
+        mSurfaceTexture.setDefaultBufferSize(mSurfaceSize.getWidth(), mSurfaceSize.getHeight());
         Log.d(TAG, getClass().getName() + ".initSurfaceSize() mSurfaceSize = " + mSurfaceSize.toString());
     }
 
@@ -226,7 +224,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
             //像素过大会导致二维码解析失败！此处限制为1080P，即2073600像素大小
             Size size = getMaxSuitSize(outputSizes, mSurfaceSize, 2073600L);
             mTextureReader = new TextureReader(size.getWidth(), size.getHeight());
-            mTextureReader.setOnFrameAvailableListener(getFrameAvailableListener());
+            mTextureReader.setOnImageAvailableListener(getImageAvailableListener());
             Log.d(TAG, getClass().getName() + ".initTextureReader() mTextureReader = " + size.toString());
         }
     }
@@ -278,7 +276,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         mDeviceStateCallback = null;
         mSessionStateCallback = null;
         mCameraListener = null;
-        mOnFrameAvailableListener = null;
+        mOnImageAvailableListener = null;
     }
 
     @Override
@@ -390,7 +388,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
             mPreviewBuilder.addTarget(surface);//添加预览的Surface
             surfaceList.add(surface);
             if (mTextureReader != null) {
-                Surface rendererSurface = mTextureReader.getSurface();
+                Surface rendererSurface = new Surface(mTextureReader.getSurfaceTexture());
                 mPreviewBuilder.addTarget(rendererSurface);
                 surfaceList.add(rendererSurface);
             }
@@ -432,9 +430,9 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         return mSessionStateCallback;
     }
 
-    private TextureReader.OnFrameAvailableListener getFrameAvailableListener() {
-        if (mOnFrameAvailableListener == null) {
-            mOnFrameAvailableListener = new TextureReader.OnFrameAvailableListener() {
+    private TextureReader.OnImageAvailableListener getImageAvailableListener() {
+        if (mOnImageAvailableListener == null) {
+            mOnImageAvailableListener = new TextureReader.OnImageAvailableListener() {
 
                 @Override
                 public void onFrameAvailable(byte[] frameData, int width, int height) {
@@ -447,7 +445,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                 }
             };
         }
-        return mOnFrameAvailableListener;
+        return mOnImageAvailableListener;
     }
 
     private float calculateRatio(float ratio) {

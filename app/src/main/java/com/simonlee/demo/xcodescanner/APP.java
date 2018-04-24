@@ -1,4 +1,4 @@
-package com.simonlee.demo.codescanner;
+package com.simonlee.demo.xcodescanner;
 
 import android.app.Application;
 

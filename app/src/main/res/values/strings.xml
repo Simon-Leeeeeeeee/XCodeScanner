@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CodeScanner</string>
+    <string name="app_name">XCodeScanner</string>
     <string name="instructions_title">说明</string>
     <string name="instructions_content">
         1.支持API14(Android4.0)及以上版本

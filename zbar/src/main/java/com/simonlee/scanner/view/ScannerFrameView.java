@@ -20,57 +20,89 @@ import com.simonlee.scanner.R;
  * @e-mail jmlixiaomeng@163.com
  */
 @SuppressWarnings("unused")
-public final class ScannerFrameView extends View {
+public class ScannerFrameView extends View {
 
     /**
-     * 扫描框宽占比（相对父容器的宽）
+     * ScannerFrameView的宽占比（相对父容器的宽）
+     *
+     * @attr frame_widthRatio
+     * @default 0dp
+     * @condition layout_width == wrap_content
      */
     private float mFrameWidthRatio;
 
     /**
-     * 扫描框高占比（相对父容器的高）
+     * ScannerFrameView高占比（相对父容器的高）
+     *
+     * @attr frame_heightRatio
+     * @default 0dp
+     * @condition layout_height == wrap_content
      */
     private float mFrameHeightRatio;
 
     /**
      * 扫描框宽高比（宽/高）
+     *
+     * @attr frame_whRatio
+     * @default 0
+     * @condition (layout_width == wrap_content && mFrameWidthRatio == 0) || (layout_height == wrap_content && mFrameHeightRatio == 0)
      */
     private float mFrameWHRatio;
 
     /**
      * 边框是否显示
+     *
+     * @attr frameLine_visible
+     * @default true
      */
     private boolean isFrameLineVisible;
 
     /**
      * 边框颜色
+     *
+     * @attr frameLine_color
+     * @default Color.WHITE
+     * @condition isFrameLineVisible == true
      */
     private int mFrameLineColor;
 
     /**
      * 边框宽度
+     *
+     * @attr frameLine_width
+     * @default 1dp
+     * @condition isFrameLineVisible == true
      */
     private int mFrameLineWidth;
 
     /**
      * 边角是否显示
+     *
+     * @attr frameCorner_visible
+     * @default true
      */
     private boolean isFrameCornerVisible;
 
     /**
-     * 边角长度;
-     * 与{@link #mFrameCornerLengthRatio}不兼容，以{@link #isMeasureFrameCornerLengthByRatio}判断
+     * 边角长度
+     *
+     * @attr frameCorner_length
+     * @default 0dp
+     * @condition isFrameCornerVisible == true
      */
     private int mFrameCornerLength;
 
     /**
-     * 边角长占比（相对View本身的宽度）;
-     * 与{@link #mFrameCornerLength}不兼容，以{@link #isMeasureFrameCornerLengthByRatio}判断
+     * 边角长占比（相对ScannerFrameView的宽度）
+     *
+     * @attr frameCorner_lengthRatio
+     * @default 0.1
+     * @condition isFrameCornerVisible == true && mFrameCornerLength == 0
      */
     private float mFrameCornerLengthRatio;
 
     /**
-     * 边角长度是否以“长占比”为准;
+     * 边角长度是否以"mFrameCornerLengthRatio"为准
      * true for {@link #mFrameCornerLengthRatio};
      * false for {@link #mFrameCornerLength}
      */
@@ -78,38 +110,59 @@ public final class ScannerFrameView extends View {
 
     /**
      * 边角宽度
+     *
+     * @attr frameCorner_width
+     * @default 3dp
+     * @condition isFrameCornerVisible == true
      */
     private int mFrameCornerWidth;
 
     /**
      * 边角颜色
+     *
+     * @attr frameCorner_color
+     * @default Color.BLUE
+     * @condition isFrameCornerVisible == true
      */
     private int mFrameCornerColor;
 
     /**
      * 扫描线是否显示
+     *
+     * @attr scanLine_visible
+     * @default true
      */
     private boolean isScanLineVisible;
 
     /**
      * 扫描线移动方向
+     *
+     * @attr scanLine_direction
+     * @default DIRECTION_BOTTOM
+     * @condition isScanLineVisible == true
      */
     private int mScanLineDirection;
 
     /**
      * 扫描线长度Padding
-     * 与{@link #mScanLineLengthRatio}不兼容，以{@link #isMeasureScanLineLengthByRatio}判断
+     *
+     * @attr scanLine_lengthPadding
+     * @default -1
+     * @condition isScanLineVisible == true
      */
     private int mScanLineLengthPadding;
 
     /**
-     * 扫描线长占比（相对View本身的宽/高，依方向而定）
-     * 与{@link #mScanLineLengthPadding}不兼容，以{@link #isMeasureScanLineLengthByRatio}判断
+     * 扫描线长占比（相对ScannerFrameView的宽/高，依方向而定）
+     *
+     * @attr scanLine_lengthRatio
+     * @default 0.98
+     * @condition isScanLineVisible == true && mScanLineLengthPadding < 0
      */
     private float mScanLineLengthRatio;
 
     /**
-     * 扫描线长度是否以“长占比”为准;
+     * 扫描线长度是否以"mScanLineLengthRatio"为准
      * true for {@link #mScanLineLengthRatio};
      * false for {@link #mScanLineLengthPadding}
      */
@@ -117,16 +170,28 @@ public final class ScannerFrameView extends View {
 
     /**
      * 扫描线宽度
+     *
+     * @attr scanLine_width
+     * @default 2dp
+     * @condition isScanLineVisible == true
      */
     private int mScanLineWidth;
 
     /**
      * 扫描线颜色
+     *
+     * @attr scanLine_color
+     * @default Color.BLUE
+     * @condition isScanLineVisible == true
      */
     private int mScanLineColor;
 
     /**
      * 扫描周期（单位毫秒）
+     *
+     * @attr scan_cycle
+     * @default 1500
+     * @condition isScanLineVisible == true
      */
     private int mScanCycle;
 
@@ -236,7 +301,7 @@ public final class ScannerFrameView extends View {
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
@@ -274,7 +339,7 @@ public final class ScannerFrameView extends View {
     /**
      * 计算扫描框各参数
      */
-    public void measureFrame() {
+    private void measureFrame() {
         if (isFrameCornerVisible) {
             measureFrameCornerLength();//计算边角长度
         }

@@ -11,6 +11,8 @@ import java.lang.ref.WeakReference;
  */
 public interface GraphicDecoder {
 
+    void setDecodeListener(DecodeListener listener);
+
     void decode(byte[] frameData, int width, int height, RectF rectClipRatio);
 
     void detach();

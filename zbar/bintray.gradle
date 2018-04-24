@@ -1,0 +1,101 @@
+//添加插件
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+//加载资源
+Properties properties = new Properties()
+File localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    properties.load(localPropertiesFile.newDataInputStream())
+}
+
+/*读取字段*/
+def key_ProjectVCS = properties.getProperty('project.vcs')
+def key_ProjectName = properties.getProperty('project.name')
+def key_ProjectDesc = properties.getProperty('project.desc')
+def key_ProjectGroupId = properties.getProperty('project.groupId')
+def key_ProjectWebsite = properties.getProperty('project.website')
+def key_ProjectVersion = properties.getProperty('project.version')
+def key_ProjectVersionDesc = properties.getProperty('project.version.desc')
+
+def key_BintrayKey = properties.getProperty('bintray.key')
+def key_BintrayUser = properties.getProperty('bintray.user')
+def key_BintrayRepo = properties.getProperty('bintray.repo')
+def key_DeveloperId = properties.getProperty('developer.id')
+def key_DeveloperName = properties.getProperty('developer.name')
+def key_DeveloperEmail = properties.getProperty('developer.email')
+
+group = key_ProjectGroupId
+version = key_ProjectVersion//版本号
+
+//定义pom并打包aar
+install {
+    repositories.mavenInstaller {
+        pom {
+            project {
+                packaging 'aar'
+                name key_ProjectName//项目名称
+                url key_ProjectWebsite//项目主页
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id key_DeveloperId
+                        name key_DeveloperName
+                        email key_DeveloperEmail
+                    }
+                }
+                scm {
+                    connection key_ProjectVCS
+                    developerConnection key_ProjectVCS
+                    url key_ProjectWebsite
+                }
+            }
+        }
+    }
+}
+
+task javadoc(type: Javadoc) {
+    options.encoding = 'utf-8'
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+bintray {
+    user = key_BintrayUser
+    key = key_BintrayKey
+    configurations = ['archives']
+    pkg {
+        repo = key_BintrayRepo
+        name = key_ProjectName
+        desc = key_ProjectDesc
+        websiteUrl = key_ProjectWebsite
+        vcsUrl = key_ProjectVCS
+        version {
+            desc = key_ProjectVersionDesc//描述，自己定义
+            name = key_ProjectVersion//版本号
+            released = new Date()
+        }
+        licenses = ["Apache-2.0"]
+        publish = true
+    }
+}

@@ -91,13 +91,13 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
     private Image mZBarImage;
     private ImageScanner mImageScanner;
 
-    private final String TAG = "CodeScanner";
+    private final String TAG = "XCodeScanner";
 
     private final Object decodeLock = new Object();//互斥锁
 
-    private int[] mSymbolTypes;//要识别的条码格式
+    private int[] mSymbolTypeArray;//要识别的条码格式
 
-    private final BaseHandler mCurThreadHandler;
+    private BaseHandler mCurThreadHandler;
 
     private volatile boolean running = true;
 
@@ -108,12 +108,21 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
     private volatile int mHeight;
     private volatile RectF mRectClipRatio;
 
-    private final DecodeListener mDecodeListener;
+    private DecodeListener mDecodeListener;
 
-    public ZBarDecoder(DecodeListener listener) {
+    public ZBarDecoder() {
+        this(null);
+    }
+
+    public ZBarDecoder(int[] symbolTypeArray) {
         this.mCurThreadHandler = new BaseHandler(this);
-        this.mDecodeListener = listener;
+        this.mSymbolTypeArray = symbolTypeArray;
         super.start();
+    }
+
+    @Override
+    public void setDecodeListener(DecodeListener listener) {
+        this.mDecodeListener = listener;
     }
 
     @Override
@@ -130,6 +139,10 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
     public synchronized void detach() {
         running = false;
         synchronized (decodeLock) {
+            if (mCurThreadHandler != null) {
+                mCurThreadHandler.clear();
+                mCurThreadHandler = null;
+            }
             if (mZBarImage != null) {
                 mZBarImage.destroy();
                 mZBarImage = null;
@@ -151,12 +164,12 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
         while (running) {//循环
             if (frameAvailable) {
                 SymbolSet symbolSet;
-                //1.解析图像
                 synchronized (decodeLock) {
+                    //1.解析图像
                     symbolSet = decodeImage(mFrameData, mWidth, mHeight, mRectClipRatio);
+                    //2.分析结果
+                    takeResult(symbolSet);
                 }
-                //2.分析结果
-                takeResult(symbolSet);
                 frameAvailable = false;
             }
         }
@@ -170,28 +183,18 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
         mImageScanner.setConfig(0, Config.X_DENSITY, 3);
         mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
         mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the Symbols
-        for (int symbolType : getSymbolTypes()) {
+        for (int symbolType : getSymbolTypeArray()) {
             mImageScanner.setConfig(symbolType, Config.ENABLE, 1);//Only symbolType is enable
         }
         mZBarImage = new Image("Y800");
     }
 
-    /**
-     * 获取支持的条码格式
-     */
-    public int[] getSymbolTypes() {
-        if (mSymbolTypes == null) {
-            mSymbolTypes = new int[]{EAN8, ISBN10, UPCA, EAN13, ISBN13, I25//, PARTIAL, UPCE, DATABAR
+    private int[] getSymbolTypeArray() {
+        if (mSymbolTypeArray == null) {
+            mSymbolTypeArray = new int[]{EAN8, ISBN10, UPCA, EAN13, ISBN13, I25//, PARTIAL, UPCE, DATABAR
                     , DATABAR_EXP, CODABAR, CODE39, PDF417, QRCODE, CODE93, CODE128};
         }
-        return mSymbolTypes;
-    }
-
-    /**
-     * 设置支持的条码格式
-     */
-    public void setSymbolTypes(int[] symbolTypes) {
-        this.mSymbolTypes = symbolTypes;
+        return mSymbolTypeArray;
     }
 
     /**
@@ -241,7 +244,8 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
 
     @Override
     public void handleMessage(Message msg) {
-        mDecodeListener.decodeSuccess(msg.arg1, msg.arg2, (String) msg.obj);
+        if (mDecodeListener != null)
+            mDecodeListener.decodeSuccess(msg.arg1, msg.arg2, (String) msg.obj);
     }
 
 }

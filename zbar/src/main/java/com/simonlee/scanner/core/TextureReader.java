@@ -11,7 +11,6 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.os.Build;
-import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -90,15 +89,14 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
     private int[] mOutputFrame = new int[1];//双缓冲帧
     private int[] mOutputTexture = new int[1];//双缓冲纹理
 
-    private Surface mOESSurface;
     private SurfaceTexture mOESSurfaceTexture;
 
-    private OnFrameAvailableListener mFrameAvailableListener;
+    private OnImageAvailableListener mImageAvailableListener;
 
     private volatile boolean running = true;
     private volatile boolean frameAvailable = false;
 
-    public interface OnFrameAvailableListener {
+    public interface OnImageAvailableListener {
         void onFrameAvailable(byte[] frameData, int width, int height);
     }
 
@@ -151,29 +149,22 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         this.mTextureBuffer.position(0);
     }
 
-    public void setOnFrameAvailableListener(OnFrameAvailableListener listener) {
-        this.mFrameAvailableListener = listener;
+    public void setOnImageAvailableListener(OnImageAvailableListener listener) {
+        this.mImageAvailableListener = listener;
     }
 
-    public Surface getSurface() {
+    public SurfaceTexture getSurfaceTexture() {
         if (mOESSurfaceTexture == null) {
             mOESSurfaceTexture = new SurfaceTexture(mOESTexture[0]);
             mOESSurfaceTexture.setDefaultBufferSize(mWidth, mHeight);
             mOESSurfaceTexture.setOnFrameAvailableListener(this);
         }
-        if (mOESSurface == null) {
-            mOESSurface = new Surface(mOESSurfaceTexture);
-        }
-        return mOESSurface;
+        return mOESSurfaceTexture;
     }
 
     public void close() {
         synchronized (this) {
             running = false;
-            if (mOESSurface != null) {
-                mOESSurface.release();
-                mOESSurface = null;
-            }
             if (mOESSurfaceTexture != null) {
                 mOESSurfaceTexture.setOnFrameAvailableListener(null);
                 mOESSurfaceTexture.release();
@@ -371,7 +362,7 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLES20.glDisableVertexAttribArray(mGLVertexIndex);
         GLES20.glDisableVertexAttribArray(mGLTextureIndex);
-        if (mFrameAvailableListener != null) {
+        if (mImageAvailableListener != null) {
             GLES20.glReadPixels(0, 0, mWidth, mHeight * 3 / 8, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mOutPutBuffer);
 //            mOutPutBytes = mOutPutBuffer.array();
             if (mOutPutBytes == null) {
@@ -380,7 +371,7 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
             mOutPutBuffer.position(0);
             mOutPutBuffer.get(mOutPutBytes, 0, mOutPutBytes.length);
             mOutPutBuffer.clear();
-            mFrameAvailableListener.onFrameAvailable(mOutPutBytes, mWidth, mHeight);
+            mImageAvailableListener.onFrameAvailable(mOutPutBytes, mWidth, mHeight);
         }
 
         //GLUnbindFrameBuffer
