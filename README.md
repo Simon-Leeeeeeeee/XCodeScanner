@@ -25,7 +25,7 @@
 
 * 视图
     * 自定义`AdjustTextureView`，继承自`TextureView`，开放`setImageFrameMatrix`接口，可根据自身尺寸、图像帧宽高及旋转角度对图像进行校正，解决预览画面变形等异常问题。
-    * 自定义`ScannerFrameView`，继承自`View`，可通过xml属性或接口自定义扫描框、四个角及扫描线的尺寸、颜色、动画等，具体属性使用参考源码注解。
+    * 自定义`ScannerFrameView`，继承自`View`，可通过xml属性或接口自定义扫描框、四个角及扫描线的尺寸、颜色、动画等，具体属性使用参考源码注解。
     * 自定义`MaskRelativeLayout`&`MaskConstraintLayout`，分别继承自`RelativeLayout`&`ConstraintLayout`，做为`ScannerFrameView`的父容器，用于绘制扫描框外部阴影。
 
 * 相机
@@ -42,7 +42,7 @@
 
 ## UML类图
 
-[![uml](/download.png)](#UML类图  "UML类图")
+[![uml](/uml.png)](#UML类图  "UML类图")
 
 ## 集成方式
 
