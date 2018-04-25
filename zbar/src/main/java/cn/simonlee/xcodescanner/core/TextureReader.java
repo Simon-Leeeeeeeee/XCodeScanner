@@ -1,4 +1,4 @@
-package com.simonlee.scanner.core;
+package cn.simonlee.xcodescanner.core;
 
 import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;

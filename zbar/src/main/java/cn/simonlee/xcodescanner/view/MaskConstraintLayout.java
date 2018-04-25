@@ -1,22 +1,25 @@
-package com.simonlee.scanner.view;
+package cn.simonlee.xcodescanner.view;
 
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.ColorInt;
+import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.RelativeLayout;
 
-import com.simonlee.scanner.R;
+import cn.simonlee.xcodescanner.R;
+
 
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * @createdTime 2018-04-10 10:50
  */
 @SuppressWarnings("unused")
-public class MaskRelativeLayout extends RelativeLayout {
+public class MaskConstraintLayout extends ConstraintLayout {
 
     /**
      * 扫描框外部颜色
@@ -28,30 +31,30 @@ public class MaskRelativeLayout extends RelativeLayout {
      */
     private Paint mPaint = new Paint();
 
-    public MaskRelativeLayout(Context context) {
+    public MaskConstraintLayout(Context context) {
         super(context);
     }
 
-    public MaskRelativeLayout(Context context, AttributeSet attrs) {
+    public MaskConstraintLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
         initView(context, attrs);
     }
 
-    public MaskRelativeLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+    public MaskConstraintLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         initView(context, attrs);
     }
 
     private void initView(Context context, AttributeSet attributeSet) {
-        TypedArray typedArray = context.obtainStyledAttributes(attributeSet, R.styleable.MaskRelativeLayout);
-        this.mFrameOutsideColor = typedArray.getColor(R.styleable.MaskRelativeLayout_frame_outsideColor, 0x60000000);
+        TypedArray typedArray = context.obtainStyledAttributes(attributeSet, R.styleable.MaskConstraintLayout);
+        this.mFrameOutsideColor = typedArray.getColor(R.styleable.MaskConstraintLayout_frame_outsideColor, 0x60000000);
         typedArray.recycle();
     }
 
     @Override
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
         boolean more = super.drawChild(canvas, child, drawingTime);
-        if (child != null && child instanceof ScannerFrameView && child.getVisibility() != GONE) {
+        if (child != null && child instanceof ScannerFrameView && child.getVisibility() != View.GONE) {
             drawFrameOutside(canvas, child.getLeft(), child.getTop(), child.getRight(), child.getBottom());
         }
         return more;
@@ -76,6 +79,11 @@ public class MaskRelativeLayout extends RelativeLayout {
      */
     public void setFrameOutsideColor(@ColorInt int frameOutsideColor) {
         this.mFrameOutsideColor = frameOutsideColor;
+    }
+
+    @Override
+    public void setBackground(Drawable background) {
+        super.setBackground(background);
     }
 
 }

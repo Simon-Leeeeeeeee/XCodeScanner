@@ -1,4 +1,4 @@
-package com.simonlee.scanner.core;
+package cn.simonlee.xcodescanner.core;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerListener {
 
+    private final int HANDLER_DECODE_DELAY = 60001;
     private final int HANDLER_SUCCESS_OPEN = 70001;
     private final int HANDLER_FAIL_CLOSED = 80001;
     private final int HANDLER_FAIL_OPEN = 80002;
@@ -46,6 +47,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private SurfaceTexture mSurfaceTexture;
 
+    private volatile boolean isDecode;//解码开关，默认为true
     private GraphicDecoder mGraphicDecoder;//图像解码器
 
     private final String TAG = "XCodeScanner";
@@ -297,6 +299,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     @Override
     public void setGraphicDecoder(GraphicDecoder graphicDecoder) {
+        this.isDecode = true;
         this.mGraphicDecoder = graphicDecoder;
     }
 
@@ -351,6 +354,19 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         Log.d(TAG, getClass().getName() + ".setFrameRect() mRectClipRatio = " + mRectClipRatio);
     }
 
+    public void stopDecode() {
+        this.isDecode = false;
+    }
+
+    public void startDecode() {
+        this.isDecode = true;
+    }
+
+    public void startDecode(int delay) {
+        if (mCurThreadHandler != null) {
+            mCurThreadHandler.sendMessageDelayed(mCurThreadHandler.obtainMessage(HANDLER_DECODE_DELAY), delay);
+        }
+    }
 
     private CameraDevice.StateCallback getDeviceStateCallback() {
         if (mDeviceStateCallback == null) {
@@ -436,7 +452,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
                 @Override
                 public void onFrameAvailable(byte[] frameData, int width, int height) {
-                    if (mGraphicDecoder != null) {
+                    if (mGraphicDecoder != null && isDecode) {
                         if (mRectClipRatio == null || mRectClipRatio.isEmpty()) {//当未设置图像识别剪裁时，应以View的大小进行设置，防止未显示的图像被误识别
                             setFrameRect(0, 0, mPreviewSize.getWidth(), mPreviewSize.getHeight());
                         }
@@ -517,6 +533,10 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                     //这里将宽高对调因为Camera2将图像顺时针旋转过90度
                     mCameraListener.openCameraSuccess(mSurfaceSize.getHeight(), mSurfaceSize.getWidth(), (4 - mOrientation) % 4 * 90);
                 }
+                break;
+            }
+            case HANDLER_DECODE_DELAY: {//开启解码
+                startDecode();
                 break;
             }
             case HANDLER_FAIL_CLOSED: {//已被关闭

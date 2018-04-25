@@ -1,4 +1,4 @@
-package com.simonlee.scanner.core;
+package cn.simonlee.xcodescanner.core;
 
 import android.os.Handler;
 import android.os.Looper;

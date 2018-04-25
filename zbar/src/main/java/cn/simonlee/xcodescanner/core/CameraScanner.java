@@ -1,4 +1,4 @@
-package com.simonlee.scanner.core;
+package cn.simonlee.xcodescanner.core;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
@@ -36,6 +36,12 @@ public interface CameraScanner {
      * 设置相机事件监听
      */
     void setCameraListener(CameraListener cameraListener);
+
+    void stopDecode();
+
+    void startDecode();
+
+    void startDecode(int delay);
 
     /**
      * 设置图像解码器

@@ -1,4 +1,4 @@
-package com.simonlee.scanner.core;
+package cn.simonlee.xcodescanner.core;
 
 import android.Manifest;
 import android.content.Context;
@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerListener {
 
+    private final int HANDLER_DECODE_DELAY = 60001;
     private final int HANDLER_SUCCESS_OPEN = 70001;
     private final int HANDLER_FAIL_CLOSED = 80001;
     private final int HANDLER_FAIL_OPEN = 80002;
@@ -37,6 +38,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private SurfaceTexture mSurfaceTexture;
 
+    private boolean isDecode;//解码开关，默认为true
     private GraphicDecoder mGraphicDecoder;//图像解码器
 
     private final String TAG = "XCodeScanner";
@@ -231,6 +233,20 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         Log.d(TAG, getClass().getName() + ".setFrameRect() mRectClipRatio = " + mRectClipRatio);
     }
 
+    public void stopDecode() {
+        this.isDecode = false;
+    }
+
+    public void startDecode() {
+        this.isDecode = true;
+    }
+
+    public void startDecode(int delay) {
+        if (mCurThreadHandler != null) {
+            mCurThreadHandler.sendMessageDelayed(mCurThreadHandler.obtainMessage(HANDLER_DECODE_DELAY), delay);
+        }
+    }
+
     private void startBackgroundThread() {
         if (mCurThreadHandler == null) {
             mCurThreadHandler = new BaseHandler(this);
@@ -333,7 +349,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
             mPreviewCallback = new Camera.PreviewCallback() {
                 @Override
                 public void onPreviewFrame(byte[] frameData, Camera camera) {
-                    if (mGraphicDecoder != null) {
+                    if (mGraphicDecoder != null && isDecode) {
                         if (mRectClipRatio == null || mRectClipRatio.isEmpty()) {//当未设置图像识别剪裁时，应以View的大小进行设置，防止未显示的图像被误识别
                             setFrameRect(0, 0, mPreviewSize.getWidth(), mPreviewSize.getHeight());
                         }
@@ -352,6 +368,10 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                 if (mCameraListener != null) {
                     mCameraListener.openCameraSuccess(mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), (5 - mOrientation) % 4 * 90);
                 }
+                break;
+            }
+            case HANDLER_DECODE_DELAY: {//开启解码
+                isDecode = true;
                 break;
             }
             case HANDLER_FAIL_CLOSED: {//已被关闭

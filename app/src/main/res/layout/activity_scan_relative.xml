@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.simonlee.scanner.view.MaskRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<cn.simonlee.xcodescanner.view.MaskRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.simonlee.scanner.view.AdjustTextureView
+    <cn.simonlee.xcodescanner.view.AdjustTextureView
         android:id="@+id/textureview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
@@ -33,7 +33,7 @@
     <!--android:layout_above="@id/textureview"-->
     <!--android:background="@color/colorAccent"/>-->
 
-    <com.simonlee.scanner.view.ScannerFrameView
+    <cn.simonlee.xcodescanner.view.ScannerFrameView
         android:id="@+id/scannerframe"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -54,4 +54,4 @@
         android:text="@string/tips_scan"
         android:textColor="@color/gray" />
 
-</com.simonlee.scanner.view.MaskRelativeLayout>
+</cn.simonlee.xcodescanner.view.MaskRelativeLayout>

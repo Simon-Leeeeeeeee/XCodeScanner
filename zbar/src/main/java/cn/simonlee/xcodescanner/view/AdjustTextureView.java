@@ -1,4 +1,4 @@
-package com.simonlee.scanner.view;
+package cn.simonlee.xcodescanner.view;
 
 import android.content.Context;
 import android.graphics.Matrix;

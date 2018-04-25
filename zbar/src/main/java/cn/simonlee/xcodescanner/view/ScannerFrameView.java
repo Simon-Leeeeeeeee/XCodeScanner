@@ -1,4 +1,4 @@
-package com.simonlee.scanner.view;
+package cn.simonlee.xcodescanner.view;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -13,7 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 
-import com.simonlee.scanner.R;
+import cn.simonlee.xcodescanner.R;
 
 /**
  * @author Simon Lee

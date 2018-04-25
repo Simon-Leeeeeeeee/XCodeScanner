@@ -1,4 +1,4 @@
-package com.simonlee.demo.xcodescanner;
+package cn.simonlee.demo.xcodescanner;
 
 import android.annotation.SuppressLint;
 import android.support.annotation.StringRes;

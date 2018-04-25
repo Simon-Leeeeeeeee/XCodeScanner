@@ -1,6 +1,6 @@
 # :star2:&nbsp;XCodeScanner
 
-一个Android平台上用来解析条形码及二维码的框架。采用zbar解析图像数据，兼容` Android4.0 (API14) `及以上版本。
+一个更快更简单更精准的Android平台解析条形码及二维码的框架。采用ZBar解析图像数据，兼容` Android4.0 (API14) `及以上版本。
 
 ## 目录
 
@@ -25,7 +25,7 @@
 
 * 视图
     * 自定义`AdjustTextureView`，继承自`TextureView`，开放`setImageFrameMatrix`接口，可根据自身尺寸、图像帧宽高及旋转角度对图像进行校正，解决预览画面变形等异常问题。
-    * 自定义`ScannerFrameView`，继承自`View`，可通过xml属性或接口自定义扫描框、四个角及扫描线的尺寸、颜色、动画等，具体属性使用参考源码注解。
+    * 自定义`ScannerFrameView`，继承自`View`，可通过xml属性或接口自定义扫描框、四个角及扫描线的尺寸、颜色、动画等，**具体属性使用参考源码注解**。
     * 自定义`MaskRelativeLayout`&`MaskConstraintLayout`，分别继承自`RelativeLayout`&`ConstraintLayout`，做为`ScannerFrameView`的父容器，用于绘制扫描框外部阴影。
 
 * 相机
@@ -33,7 +33,7 @@
     * 子线程开启camera，防止阻塞主线程造成界面跳转卡顿。
     * 采用单例模式，防止出现多个实例同时操作相机设备引发异常。
     * 开放扫码框Rect设置接口，根据预览尺寸、图像帧尺寸、预览方向计算出扫码框在图像帧上的实际位置，以指定图像识别区域。
-    * 用`TextureReader`代替`ImageReader`，采用openGl绘制图像纹理，主要解决预览掉帧严重的问题，最终输出实时YUV格式图像。
+    * 用`TextureReader`代替`ImageReader`，采用openGL绘制图像纹理，主要解决预览掉帧严重的问题，实时输出YUV格式图像。
 
 * 解码
     * 支持指定图像区域识别。
@@ -49,15 +49,15 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
+        // a. 1.1.3版本正在提交更新，更新成功后我会及时更新文档。
+        // b. 1.1.3命名上有所改变 codescanner 更名为 xcodescanner
         implementation 'cn.simonlee.codescanner:zbar:1.1.1'
     }
 ```
 
 ## 使用方式
 
-* **STEP.1**
-
-
+* **STEP.1**<br/>
 在Activity的onCreate方法中获取CameraScanner实例，并对CameraScanner和TextureView设置监听
 ```java
 public void onCreate(Bundle savedInstanceState) {
@@ -148,6 +148,13 @@ public void onRestart() {
 
 ## 版本记录
 
+*  V1.1.3   `2018/04/25`
+   1. 修复部分x86设备闪退的问题。
+   2. `CameraScanner`新增`stopDecode()`和`startDecode(int delay)`接口，可暂停/延时解码。
+   3. ZBar包名由`com.simonlee.xcodescanner`变更为`com.simonlee.xcodescanner`。
+   4. Gradle依赖的groupID由`cn.simonlee.codescanner`变更为`cn.simonlee.xcodescanner`，由此给开发者带来不便，敬请谅解。
+   5. 有开发者反馈部分机型存在闪退、无法解析二维码的问题，将在近期解决。
+
 *  V1.1.2   `2018/04/24`
    1. 修复`ZBarDecoder`中设置解码格式无效的问题。
 
@@ -175,10 +182,10 @@ public void onRestart() {
     2. 优化`Camera2Scanner`，解决后台切换导致的闪退问题。
 
 *  V1.0.6   `2018/04/09`
-    1. 调整代码结构，将扫码核心从app移植到zbar中。
+    1. 调整代码结构，将扫码核心从app移植到zBar中。
 
 *  V1.0.5   `2018/03/29`
-    1. 增加帧数据的最大尺寸限制，避免因过高像素导致Zbar解析二维码失败。
+    1. 增加帧数据的最大尺寸限制，避免因过高像素导致ZBar解析二维码失败。
     2. 屏蔽ZBar对DataBar(RSS-14)格式条码的支持，此格式实用性不高，且易产生误判。
 
 *  V1.0.4   `2018/03/27`
@@ -205,7 +212,7 @@ public void onRestart() {
 
 ## 关于作者
 
-这是我个人的第一个开源项目，慢慢悠悠也投入了不少精力。在开源的过程总共碰到了许多疑点难点，其中借鉴了很多大神的成果。因为自己的疏忽没有预先做好参考记录，在这里向那些为开源默默奉献的大神们致敬！谢谢你们！
+这是我个人的第一个开源项目，慢慢悠悠也投入了不少精力。在开源的过程中碰到了许多疑点难点，其中借鉴了很多大神的成果。因为自己的疏忽没有预先做好参考记录，在这里向那些为开源默默奉献的大神们致敬！谢谢你们！
 
 如果您觉得有用，请动动小手给我一个**Star**来点鼓励吧:blush:
 

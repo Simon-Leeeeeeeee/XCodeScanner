@@ -35,6 +35,7 @@ public class ImageScanner {
     private long peer;
 
     static {
+        System.loadLibrary("iconv");
         System.loadLibrary("zbarjni");
         init();
     }

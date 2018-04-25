@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.simonlee.demo.xcodescanner">
+    package="cn.simonlee.demo.xcodescanner">
 
     <uses-permission android:name="android.permission.CAMERA" /><!--相机-->
 
     <application
-        android:name="com.simonlee.demo.xcodescanner.APP"
+        android:name=".APP"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="com.simonlee.demo.xcodescanner.MainActivity">
+        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -20,7 +20,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.simonlee.demo.xcodescanner.ScanActivity"
+            android:name=".ScanActivity"
             android:launchMode="singleTask"
             android:theme="@style/BlackAppTheme" />
     </application>

@@ -1,9 +1,6 @@
-package com.simonlee.scanner.core;
+package cn.simonlee.xcodescanner.core;
 
 import android.graphics.RectF;
-import android.support.annotation.CallSuper;
-
-import java.lang.ref.WeakReference;
 
 /**
  * @author Simon Lee

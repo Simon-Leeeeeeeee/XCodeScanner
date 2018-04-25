@@ -1,4 +1,4 @@
-package com.simonlee.demo.xcodescanner;
+package cn.simonlee.demo.xcodescanner;
 
 import android.graphics.SurfaceTexture;
 import android.os.Build;
@@ -7,13 +7,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.TextureView;
 
-import com.simonlee.scanner.core.CameraScanner;
-import com.simonlee.scanner.core.GraphicDecoder;
-import com.simonlee.scanner.core.NewCameraScanner;
-import com.simonlee.scanner.core.OldCameraScanner;
-import com.simonlee.scanner.core.ZBarDecoder;
-import com.simonlee.scanner.view.AdjustTextureView;
-import com.simonlee.scanner.view.ScannerFrameView;
+import cn.simonlee.xcodescanner.core.CameraScanner;
+import cn.simonlee.xcodescanner.core.GraphicDecoder;
+import cn.simonlee.xcodescanner.core.NewCameraScanner;
+import cn.simonlee.xcodescanner.core.OldCameraScanner;
+import cn.simonlee.xcodescanner.core.ZBarDecoder;
+import cn.simonlee.xcodescanner.view.AdjustTextureView;
+import cn.simonlee.xcodescanner.view.ScannerFrameView;
 
 /**
  * @author Simon Lee
