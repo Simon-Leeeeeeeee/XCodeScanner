@@ -30,19 +30,34 @@
             android:textSize="18sp" />
 
         <Button
-            android:id="@+id/btn_scan_relative"
+            android:id="@+id/btn_scan_relative_old"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
-            android:text="@string/scan_relative" />
+            android:text="@string/scan_relative_old" />
 
         <Button
-            android:id="@+id/btn_scan_constraint"
+            android:id="@+id/btn_scan_relative_new"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="@string/scan_relative_new" />
+
+        <Button
+            android:id="@+id/btn_scan_constraint_old"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
             android:layout_marginLeft="10dp"
-            android:text="@string/scan_constraint" />
+            android:text="@string/scan_constraint_old" />
+
+        <Button
+            android:id="@+id/btn_scan_constraint_new"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="10dp"
+            android:text="@string/scan_constraint_new" />
 
     </LinearLayout>
 </ScrollView>

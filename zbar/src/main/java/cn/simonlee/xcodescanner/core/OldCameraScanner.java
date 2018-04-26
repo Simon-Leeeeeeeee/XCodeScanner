@@ -61,9 +61,9 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private volatile static OldCameraScanner instance;
 
-    public static CameraScanner getInstance() {
+    public static OldCameraScanner getInstance() {
         if (instance == null) {
-            synchronized (CameraScanner.class) {
+            synchronized (OldCameraScanner.class) {
                 if (instance == null) {
                     instance = new OldCameraScanner();
                 }
@@ -146,7 +146,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         closeCamera();
         stopBackgroundThread();
         if (mSurfaceTexture != null) {
-            mSurfaceTexture.release();
+            //mSurfaceTexture.release();//经测试，4.2版本中此处会报错
             mSurfaceTexture = null;
         }
         if (mGraphicDecoder != null) {
@@ -179,6 +179,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     @Override
     public void setGraphicDecoder(GraphicDecoder graphicDecoder) {
+        this.isDecode = true;
         this.mGraphicDecoder = graphicDecoder;
     }
 
@@ -371,7 +372,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                 break;
             }
             case HANDLER_DECODE_DELAY: {//开启解码
-                isDecode = true;
+                startDecode();
                 break;
             }
             case HANDLER_FAIL_CLOSED: {//已被关闭

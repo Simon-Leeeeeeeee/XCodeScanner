@@ -126,7 +126,7 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
     }
 
     @Override
-    public synchronized void decode(byte[] frameData, int width, int height, RectF rectClipRatio) {
+    public void decode(byte[] frameData, int width, int height, RectF rectClipRatio) {
         if (!running) return;
         mFrameData = frameData;
         mWidth = width;
@@ -137,20 +137,19 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
 
     @Override
     public synchronized void detach() {
+        Log.d(TAG, getClass().getName() + ".detach()");
         running = false;
-        synchronized (decodeLock) {
-            if (mCurThreadHandler != null) {
-                mCurThreadHandler.clear();
-                mCurThreadHandler = null;
-            }
-            if (mZBarImage != null) {
-                mZBarImage.destroy();
-                mZBarImage = null;
-            }
-            if (mImageScanner != null) {
-                mImageScanner.destroy();
-                mImageScanner = null;
-            }
+        if (mCurThreadHandler != null) {
+            mCurThreadHandler.clear();
+            mCurThreadHandler = null;
+        }
+        if (mZBarImage != null) {
+            mZBarImage.destroy();
+            mZBarImage = null;
+        }
+        if (mImageScanner != null) {
+            mImageScanner.destroy();
+            mImageScanner = null;
         }
     }
 
@@ -162,15 +161,16 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
     public void run() {
         init();
         while (running) {//循环
-            if (frameAvailable) {
-                SymbolSet symbolSet;
-                synchronized (decodeLock) {
+            synchronized (ZBarDecoder.this) {
+                if (frameAvailable && running) {
+                    Log.e(TAG, getClass().getName() + ".解析图像()");
                     //1.解析图像
-                    symbolSet = decodeImage(mFrameData, mWidth, mHeight, mRectClipRatio);
+                    SymbolSet symbolSet = decodeImage(mFrameData, mWidth, mHeight, mRectClipRatio);
+                    Log.e(TAG, getClass().getName() + ".分析结果()");
                     //2.分析结果
                     takeResult(symbolSet);
+                    frameAvailable = false;
                 }
-                frameAvailable = false;
             }
         }
     }

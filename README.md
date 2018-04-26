@@ -1,6 +1,6 @@
 # :star2:&nbsp;XCodeScanner
 
-一个更快更简单更精准的Android平台解析条形码及二维码的框架。采用[ZBar](https://github.com/ZBar/ZBar)解析图像数据，兼容` Android4.0 (API14) `及以上版本。
+一个Android平台更快更简单更精准的条形码及二维码解析框架。采用[ZBar](https://github.com/ZBar/ZBar)解析图像数据，兼容` Android4.0 (API14) `及以上版本。
 
 ## 目录
 
@@ -49,7 +49,9 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
-        implementation 'cn.simonlee.xcodescanner:zbar:1.1.3'
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.3' //1.1.4已提交更新
+        //已知BUG：在1.1.3中新增了解码的暂停和启用功能，OldCameraScanner默认没有启用，在1.1.4中会得到修复。
+        //解决方法：openCameraSuccess回调中，setGraphicDecoder()后手动调用startDecode()方法。
     }
 ```
 
@@ -146,15 +148,21 @@ public void onRestart() {
 
 ## 版本记录
 
+*  V1.1.4   `2018/04/26`
+   1. 解决Android4.2退出时闪退的问题。
+   2. 解决某些低端机型可能预览严重丢帧的问题。
+   3. 解决`OldCameraScanner`默认没有开启解码的问题。
+   4. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.4`。
+
 *  V1.1.3   `2018/04/25`
-   1. 修复部分x86设备闪退的问题。
+   1. 解决部分x86设备闪退的问题。
    2. `CameraScanner`新增`stopDecode()`和`startDecode(int delay)`接口，可暂停/延时解码。
    3. ZBar包名由`com.simonlee.xcodescanner`变更为`com.simonlee.xcodescanner`。
    4. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.3`，`codescanner`变更为`xcodescanner`，由此带来不便的敬请谅解。
    5. 有开发者反馈部分机型存在闪退、无法解析二维码的问题，将在近期解决。
 
 *  V1.1.2   `2018/04/24`
-   1. 修复`ZBarDecoder`中设置解码格式无效的问题。
+   1. 解决`ZBarDecoder`中设置解码格式无效的问题。
 
 *  V1.1.1   `2018/04/16`
    1. `ScannerFrameView`增加高占比属性，可设置相对父容器高的占比。

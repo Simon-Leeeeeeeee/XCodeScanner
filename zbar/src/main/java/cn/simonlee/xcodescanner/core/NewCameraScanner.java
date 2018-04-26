@@ -81,9 +81,9 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private volatile static NewCameraScanner instance;
 
-    public static CameraScanner getInstance() {
+    public static NewCameraScanner getInstance() {
         if (instance == null) {
-            synchronized (CameraScanner.class) {
+            synchronized (NewCameraScanner.class) {
                 if (instance == null) {
                     instance = new NewCameraScanner();
                 }

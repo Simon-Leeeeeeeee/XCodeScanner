@@ -162,14 +162,12 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         return mOESSurfaceTexture;
     }
 
-    public void close() {
-        synchronized (this) {
-            running = false;
-            if (mOESSurfaceTexture != null) {
-                mOESSurfaceTexture.setOnFrameAvailableListener(null);
-                mOESSurfaceTexture.release();
-                mOESSurfaceTexture = null;
-            }
+    public synchronized void close() {
+        running = false;
+        if (mOESSurfaceTexture != null) {
+            mOESSurfaceTexture.setOnFrameAvailableListener(null);
+            mOESSurfaceTexture.release();
+            mOESSurfaceTexture = null;
         }
     }
 
@@ -184,7 +182,7 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         setupShaderAttributeID();//获取着色器中自定义变量的索引
         setupOutputFrame();//设置双缓冲帧
         while (running) {
-            synchronized (this) {
+            synchronized (TextureReader.this) {
                 if (frameAvailable && running) {
                     frameAvailable = false;
                     drawTexture();

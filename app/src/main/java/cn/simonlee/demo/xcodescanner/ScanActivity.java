@@ -33,16 +33,17 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, getClass().getName() + ".onCreate()");
         super.onCreate(savedInstanceState);
-        int id = getIntent().getIntExtra("type", R.id.btn_scan_constraint);
-        setContentView(id == R.id.btn_scan_relative ? R.layout.activity_scan_relative : R.layout.activity_scan_constraint);
+        int layout = getIntent().getIntExtra("layout", 0);
+        int api = getIntent().getIntExtra("api", 0);
+        setContentView(layout == 1 ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
 
         mTextureView = findViewById(R.id.textureview);
         mScannerFrameView = findViewById(R.id.scannerframe);
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            mCameraScanner = OldCameraScanner.getInstance();
-        } else {
+        if (api == 1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mCameraScanner = NewCameraScanner.getInstance();
+        } else {
+            mCameraScanner = OldCameraScanner.getInstance();
         }
 
         mCameraScanner.setCameraListener(this);
@@ -120,6 +121,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
         //TODO 应考虑TextureView与ScannerFrameView的Margin与padding的情况
         mCameraScanner.setFrameRect(mScannerFrameView.getLeft(), mScannerFrameView.getTop(), mScannerFrameView.getRight(), mScannerFrameView.getBottom());
         mCameraScanner.setGraphicDecoder(mGraphicDecoder);
+        mCameraScanner.startDecode();
     }
 
     @Override

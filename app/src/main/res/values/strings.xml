@@ -8,8 +8,10 @@
         \n4.支持自定义扫描框
         \n5.支持精度及条码类型过滤
         \n6.支持前后台横竖屏切换</string>
-    <string name="scan_relative">扫码(RelativeLayout布局)</string>
-    <string name="scan_constraint">扫码(ConstraintLayout布局)</string>
+    <string name="scan_relative_old">扫码(RelativeLayout布局，旧API)</string>
+    <string name="scan_constraint_old">扫码(ConstraintLayout布局，旧API)</string>
+    <string name="scan_relative_new">扫码(RelativeLayout布局，新API)</string>
+    <string name="scan_constraint_new">扫码(ConstraintLayout布局，新API)</string>
     <string name="tips_scan">将二维码/条码放入框内，即可自动扫描</string>
 
 </resources>
