@@ -49,9 +49,7 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
-        implementation 'cn.simonlee.xcodescanner:zbar:1.1.3' //1.1.4已提交更新
-        //已知BUG：在1.1.3中新增了解码的暂停和启用功能，OldCameraScanner默认没有启用，在1.1.4中会得到修复。
-        //解决方法：openCameraSuccess回调中，setGraphicDecoder()后手动调用startDecode()方法。
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.4'
     }
 ```
 
