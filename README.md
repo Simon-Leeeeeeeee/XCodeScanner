@@ -1,6 +1,6 @@
 # :star2:&nbsp;XCodeScanner
 
-一个更快更简单更精准的Android平台解析条形码及二维码的框架。采用ZBar解析图像数据，兼容` Android4.0 (API14) `及以上版本。
+一个更快更简单更精准的Android平台解析条形码及二维码的框架。采用[ZBar](https://github.com/ZBar/ZBar)解析图像数据，兼容` Android4.0 (API14) `及以上版本。
 
 ## 目录
 
@@ -21,7 +21,7 @@
 
 ## 功能介绍
 
-本项目基于ZBar进行开发，分别对视图、相机、解码三个方面进行了高度封装，同时降低三者之间的耦合，增加可灵活配置性。
+本项目基于[ZBar](https://github.com/ZBar/ZBar)进行开发，分别对视图、相机、解码三个方面进行了高度封装，同时降低三者之间的耦合，增加可灵活配置性。
 
 * 视图
     * 自定义`AdjustTextureView`，继承自`TextureView`，开放`setImageFrameMatrix`接口，可根据自身尺寸、图像帧宽高及旋转角度对图像进行校正，解决预览画面变形等异常问题。
@@ -49,9 +49,7 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
-        // a. 1.1.3版本正在提交更新，更新成功后我会及时更新文档。
-        // b. 1.1.3命名上有所改变 codescanner 更名为 xcodescanner
-        implementation 'cn.simonlee.codescanner:zbar:1.1.1'
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.3'
     }
 ```
 
@@ -152,7 +150,7 @@ public void onRestart() {
    1. 修复部分x86设备闪退的问题。
    2. `CameraScanner`新增`stopDecode()`和`startDecode(int delay)`接口，可暂停/延时解码。
    3. ZBar包名由`com.simonlee.xcodescanner`变更为`com.simonlee.xcodescanner`。
-   4. Gradle依赖的groupID由`cn.simonlee.codescanner`变更为`cn.simonlee.xcodescanner`，由此给开发者带来不便，敬请谅解。
+   4. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.3`，`codescanner`变更为`xcodescanner`，由此带来不便的敬请谅解。
    5. 有开发者反馈部分机型存在闪退、无法解析二维码的问题，将在近期解决。
 
 *  V1.1.2   `2018/04/24`
@@ -160,6 +158,7 @@ public void onRestart() {
 
 *  V1.1.1   `2018/04/16`
    1. `ScannerFrameView`增加高占比属性，可设置相对父容器高的占比。
+   2. 发布开源库：`cn.simonlee.codescanner:zbar:1.1.1`。
 
 *  V1.1.0   `2018/04/16`
    1. 重写`ZBarDecoder`，解决单线程池可能引起的条码解析延迟问题。
@@ -182,7 +181,7 @@ public void onRestart() {
     2. 优化`Camera2Scanner`，解决后台切换导致的闪退问题。
 
 *  V1.0.6   `2018/04/09`
-    1. 调整代码结构，将扫码核心从app移植到zBar中。
+    1. 调整代码结构，将扫码核心从app移植到zbar中。
 
 *  V1.0.5   `2018/03/29`
     1. 增加帧数据的最大尺寸限制，避免因过高像素导致ZBar解析二维码失败。
@@ -213,6 +212,8 @@ public void onRestart() {
 ## 关于作者
 
 这是我个人的第一个开源项目，慢慢悠悠也投入了不少精力。在开源的过程中碰到了许多疑点难点，其中借鉴了很多大神的成果。因为自己的疏忽没有预先做好参考记录，在这里向那些为开源默默奉献的大神们致敬！谢谢你们！
+
+如果在使用过程中遇到了闪退、黑屏、无法识别、无法对焦、预览掉帧、内存泄漏等任何异常问题，欢迎提Issues！同时请尽量附上设备型号、android版本号、BUG复现步骤、异常日志、无法识别的图像等，我会尽快安排解决。
 
 如果您觉得有用，请动动小手给我一个**Star**来点鼓励吧:blush:
 
