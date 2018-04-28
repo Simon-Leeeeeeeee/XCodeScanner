@@ -33,14 +33,13 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, getClass().getName() + ".onCreate()");
         super.onCreate(savedInstanceState);
-        int layout = getIntent().getIntExtra("layout", 0);
-        int api = getIntent().getIntExtra("api", 0);
-        setContentView(layout == 1 ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
+        int mode = getIntent().getIntExtra("mode", 0);//0-RO 1-RN 2-CO 3-CN
+        setContentView(mode > 1 ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
 
         mTextureView = findViewById(R.id.textureview);
         mScannerFrameView = findViewById(R.id.scannerframe);
 
-        if (api == 1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (mode % 2 != 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mCameraScanner = NewCameraScanner.getInstance();
         } else {
             mCameraScanner = OldCameraScanner.getInstance();
@@ -121,7 +120,6 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
         //TODO 应考虑TextureView与ScannerFrameView的Margin与padding的情况
         mCameraScanner.setFrameRect(mScannerFrameView.getLeft(), mScannerFrameView.getTop(), mScannerFrameView.getRight(), mScannerFrameView.getBottom());
         mCameraScanner.setGraphicDecoder(mGraphicDecoder);
-        mCameraScanner.startDecode();
     }
 
     @Override
@@ -145,7 +143,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     @Override
     public void decodeSuccess(int type, int quality, String result) {
         if (result.equals(mResult)) {
-            if (++mCount > 3) {//连续四次相同，则显示结果（主要防止误读）
+            if (++mCount > 3) {//连续四次相同则显示结果（主要过滤脏数据，也可以根据条码类型自定义规则）
                 if (quality < 10) {
                     ToastHelper.showToast("[类型" + type + "/精度00" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
                 } else if (quality < 100) {
@@ -157,6 +155,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
         } else {
             mCount = 1;
             mResult = result;
+            Log.e(TAG, getClass().getName() + ".decodeSuccess() -> "+mResult);
         }
     }
 

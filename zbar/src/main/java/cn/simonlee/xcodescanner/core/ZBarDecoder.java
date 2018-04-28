@@ -10,6 +10,10 @@ import net.sourceforge.zbar.ImageScanner;
 import net.sourceforge.zbar.Symbol;
 import net.sourceforge.zbar.SymbolSet;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
@@ -19,9 +23,8 @@ import net.sourceforge.zbar.SymbolSet;
  * 3.条码误读为UPC-E格式，此格式常用性一般，按需求决定是否开放，并结合精度进行判断
  * 4.EAN-13格式的条码部分情况下识别出现错误，表现在a.解析成其他格式 b.解析出错误条码，如6920586221399，与算法及分辨率有关，与条码图像无关
  */
-
 @SuppressWarnings("unused")
-public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.BaseHandlerListener {
+public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListener {
 
     /**
      * Symbol detected but not decoded.
@@ -95,29 +98,53 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
 
     private final Object decodeLock = new Object();//互斥锁
 
-    private int[] mSymbolTypeArray;//要识别的条码格式
-
     private BaseHandler mCurThreadHandler;
-
-    private volatile boolean running = true;
-
-    private volatile boolean frameAvailable = false;
-
-    private volatile byte[] mFrameData;
-    private volatile int mWidth;
-    private volatile int mHeight;
-    private volatile RectF mRectClipRatio;
 
     private DecodeListener mDecodeListener;
 
+    private ThreadPoolExecutor mExecutorService;
+    private ArrayBlockingQueue<Runnable> mArrayBlockingQueue;
+
+    private final int HANDLER_DECODE_DELAY = 60001;
+    private final int HANDLER_DECODE_SUCCESS = 60002;
+
+    private volatile boolean isDecodeEnabled;//解码开关，默认为true
+
+    /**
+     * 如果要指定扫码格式，请使用含参构造方法.
+     */
     public ZBarDecoder() {
         this(null);
     }
 
+    /**
+     * 指定扫码格式进行识别，支持的格式EAN8、ISBN10、UPCA、EAN13、ISBN13、I25、UPCE、DATABAR
+     * 、DATABAR_EXP、CODABAR、CODE39、PDF417、QRCODE、CODE93、CODE128，可根据实际需要进行配置。
+     */
     public ZBarDecoder(int[] symbolTypeArray) {
         this.mCurThreadHandler = new BaseHandler(this);
-        this.mSymbolTypeArray = symbolTypeArray;
-        super.start();
+        startDecode();
+        initZBar(symbolTypeArray);
+        mArrayBlockingQueue = new ArrayBlockingQueue<>(1);
+        mExecutorService = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, mArrayBlockingQueue);
+    }
+
+    /**
+     * 初始化ImageScanner&Image
+     */
+    private void initZBar(int[] symbolTypeArray) {
+        mImageScanner = new ImageScanner();
+        mImageScanner.setConfig(0, Config.X_DENSITY, 3);
+        mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
+        mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the Symbols
+        if (symbolTypeArray == null) {
+            symbolTypeArray = new int[]{EAN8, ISBN10, UPCA, EAN13, ISBN13, I25//, PARTIAL, UPCE, DATABAR
+                    , DATABAR_EXP, CODABAR, CODE39, PDF417, QRCODE, CODE93, CODE128};
+        }
+        for (int symbolType : symbolTypeArray) {
+            mImageScanner.setConfig(symbolType, Config.ENABLE, 1);//Only symbolType is enable
+        }
+        mZBarImage = new Image("Y800");
     }
 
     @Override
@@ -126,75 +153,56 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
     }
 
     @Override
-    public void decode(byte[] frameData, int width, int height, RectF rectClipRatio) {
-        if (!running) return;
-        mFrameData = frameData;
-        mWidth = width;
-        mHeight = height;
-        mRectClipRatio = rectClipRatio;
-        frameAvailable = true;
+    public void stopDecode() {
+        this.isDecodeEnabled = false;
     }
 
     @Override
-    public synchronized void detach() {
-        Log.d(TAG, getClass().getName() + ".detach()");
-        running = false;
+    public void startDecode() {
+        this.isDecodeEnabled = true;
+    }
+
+    @Override
+    public void startDecodeDelay(int delay) {
         if (mCurThreadHandler != null) {
-            mCurThreadHandler.clear();
-            mCurThreadHandler = null;
-        }
-        if (mZBarImage != null) {
-            mZBarImage.destroy();
-            mZBarImage = null;
-        }
-        if (mImageScanner != null) {
-            mImageScanner.destroy();
-            mImageScanner = null;
+            mCurThreadHandler.sendMessageDelayed(mCurThreadHandler.obtainMessage(HANDLER_DECODE_DELAY), delay);
         }
     }
 
     @Override
-    public final synchronized void start() {
+    public synchronized void decode(byte[] frameData, int width, int height, RectF rectClipRatio) {
+        if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null && mArrayBlockingQueue.size() < 1) {
+            mExecutorService.execute(new DecodeRunnable(frameData, width, height, rectClipRatio));
+        }
     }
 
     @Override
-    public void run() {
-        init();
-        while (running) {//循环
-            synchronized (ZBarDecoder.this) {
-                if (frameAvailable && running) {
-                    Log.e(TAG, getClass().getName() + ".解析图像()");
-                    //1.解析图像
-                    SymbolSet symbolSet = decodeImage(mFrameData, mWidth, mHeight, mRectClipRatio);
-                    Log.e(TAG, getClass().getName() + ".分析结果()");
-                    //2.分析结果
-                    takeResult(symbolSet);
-                    frameAvailable = false;
-                }
+    public void detach() {
+        Log.d(TAG, getClass().getName() + ".detach()");
+        synchronized (ZBarDecoder.this) {
+            if (mExecutorService != null) {
+                mExecutorService.shutdownNow();
+                mExecutorService = null;
+            }
+            if (mArrayBlockingQueue != null) {
+                mArrayBlockingQueue.clear();
+                mArrayBlockingQueue = null;
             }
         }
-    }
-
-    /**
-     * 初始化ImageScanner&Image
-     */
-    private void init() {
-        mImageScanner = new ImageScanner();
-        mImageScanner.setConfig(0, Config.X_DENSITY, 3);
-        mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
-        mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the Symbols
-        for (int symbolType : getSymbolTypeArray()) {
-            mImageScanner.setConfig(symbolType, Config.ENABLE, 1);//Only symbolType is enable
+        synchronized (decodeLock) {
+            if (mCurThreadHandler != null) {
+                mCurThreadHandler.clear();
+                mCurThreadHandler = null;
+            }
+            if (mZBarImage != null) {
+                mZBarImage.destroy();
+                mZBarImage = null;
+            }
+            if (mImageScanner != null) {
+                mImageScanner.destroy();
+                mImageScanner = null;
+            }
         }
-        mZBarImage = new Image("Y800");
-    }
-
-    private int[] getSymbolTypeArray() {
-        if (mSymbolTypeArray == null) {
-            mSymbolTypeArray = new int[]{EAN8, ISBN10, UPCA, EAN13, ISBN13, I25//, PARTIAL, UPCE, DATABAR
-                    , DATABAR_EXP, CODABAR, CODE39, PDF417, QRCODE, CODE93, CODE128};
-        }
-        return mSymbolTypeArray;
     }
 
     /**
@@ -226,7 +234,7 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
      * 从Symbol集合中获取结果
      */
     private void takeResult(SymbolSet symbolSet) {
-        if (symbolSet == null) return;
+        if (symbolSet == null || mCurThreadHandler == null) return;
         for (Symbol symbol : symbolSet) {
             String result = symbol.getData();
             if (result != null && result.length() > 0) {
@@ -236,7 +244,7 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
                 int type = symbol.getType();
                 int quality = symbol.getQuality();
                 Log.d(TAG, getClass().getName() + ".zbarDecode() : type = " + type + " , quality = " + quality + " , result = " + result);
-                mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(0, type, quality, result));
+                mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_DECODE_SUCCESS, type, quality, result));
                 break;
             }
         }
@@ -244,8 +252,42 @@ public class ZBarDecoder extends Thread implements GraphicDecoder, BaseHandler.B
 
     @Override
     public void handleMessage(Message msg) {
-        if (mDecodeListener != null)
-            mDecodeListener.decodeSuccess(msg.arg1, msg.arg2, (String) msg.obj);
+        switch (msg.what) {
+            case HANDLER_DECODE_DELAY: {//开启解码
+                startDecode();
+                break;
+            }
+            case HANDLER_DECODE_SUCCESS: {//解码成功
+                if (mDecodeListener != null && isDecodeEnabled) {
+                    mDecodeListener.decodeSuccess(msg.arg1, msg.arg2, (String) msg.obj);
+                }
+                break;
+            }
+        }
     }
 
+    private class DecodeRunnable implements Runnable {
+
+        private final byte[] mFrameData;
+        private final int mWidth;
+        private final int mHeight;
+        private final RectF mRectClipRatio;
+
+        DecodeRunnable(byte[] frameData, int width, int height, RectF rectClipRatio) {
+            this.mFrameData = frameData;
+            this.mWidth = width;
+            this.mHeight = height;
+            this.mRectClipRatio = rectClipRatio;
+        }
+
+        @Override
+        public void run() {
+            synchronized (decodeLock) {
+                //1.解析图像
+                SymbolSet symbolSet = decodeImage(mFrameData, mWidth, mHeight, mRectClipRatio);
+                //2.分析结果
+                takeResult(symbolSet);
+            }
+        }
+    }
 }

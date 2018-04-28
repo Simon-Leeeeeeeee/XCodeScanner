@@ -146,6 +146,11 @@ public void onRestart() {
 
 ## 版本记录
 
+*  V1.1.5   `待发布`
+   1. 解决申请权限闪退的问题。
+   2. 修改`ZBarDecoder`和`TextureReader`的实现方式，降低CPU占用。
+   3. 暂停/延时解码接口从`CameraScanner`迁移到`GraphicDecoder`，`CameraScanner`可能因为异步导致暂停后继续回调`decodeSuccess`接口。
+
 *  V1.1.4   `2018/04/26`
    1. 解决Android4.2退出时闪退的问题。
    2. 解决某些低端机型可能预览严重丢帧的问题。
@@ -198,7 +203,7 @@ public void onRestart() {
     2. 修改`GraphicDecoder`，EGL14替换EGL10，解决部分机型不兼容的问题；解决多线程可能的空指针异常。
 
 *  V1.0.3   `2018/03/23`
-    1. 新增`TextureReader`，通过双缓冲纹理获取帧数据进行回调，代替ImageReader的使用。
+    1. 新增`TextureReader`，通过双缓冲纹理获取帧数据进行回调，代替`ImageReader`的使用。
     2. 修改`GraphicDecoder`，handler放到子类中去操作。
 
 *  V1.0.2   `2018/03/14`

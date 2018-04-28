@@ -10,6 +10,12 @@ public interface GraphicDecoder {
 
     void setDecodeListener(DecodeListener listener);
 
+    void stopDecode();
+
+    void startDecode();
+
+    void startDecodeDelay(int delay);
+
     void decode(byte[] frameData, int width, int height, RectF rectClipRatio);
 
     void detach();

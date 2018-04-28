@@ -37,12 +37,6 @@ public interface CameraScanner {
      */
     void setCameraListener(CameraListener cameraListener);
 
-    void stopDecode();
-
-    void startDecode();
-
-    void startDecode(int delay);
-
     /**
      * 设置图像解码器
      */

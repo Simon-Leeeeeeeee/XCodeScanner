@@ -21,7 +21,7 @@ import java.nio.FloatBuffer;
  * @e-mail jmlixiaomeng@163.com
  */
 @TargetApi(Build.VERSION_CODES.KITKAT)
-public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvailableListener {
+public class TextureReader implements SurfaceTexture.OnFrameAvailableListener {
 
     // 着色器中的自定义变量
     private static final String[] mShaderAttributes = new String[]{
@@ -93,9 +93,6 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
 
     private OnImageAvailableListener mImageAvailableListener;
 
-    private volatile boolean running = true;
-    private volatile boolean frameAvailable = false;
-
     public interface OnImageAvailableListener {
         void onFrameAvailable(byte[] frameData, int width, int height);
     }
@@ -106,7 +103,10 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         this.mOutPutBuffer = ByteBuffer.allocate(width * height * 3 / 2);
         setupOESTexture();//设置外部纹理
         setupTextureBuffer();//设置纹理Buffer
-        super.start();
+        initEGL();//初始化EGL
+        creatShaderProgram();//创建着色器程序
+        setupShaderAttributeID();//获取着色器中自定义变量的索引
+        setupOutputFrame();//设置双缓冲帧
     }
 
     //设置外部纹理
@@ -147,50 +147,6 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         ByteBuffer textureBuffer = ByteBuffer.allocateDirect(textureCoordArray.length * 4);//一个float占4个字节
         this.mTextureBuffer = textureBuffer.order(byteOrder).asFloatBuffer().put(textureCoordArray);
         this.mTextureBuffer.position(0);
-    }
-
-    public void setOnImageAvailableListener(OnImageAvailableListener listener) {
-        this.mImageAvailableListener = listener;
-    }
-
-    public SurfaceTexture getSurfaceTexture() {
-        if (mOESSurfaceTexture == null) {
-            mOESSurfaceTexture = new SurfaceTexture(mOESTexture[0]);
-            mOESSurfaceTexture.setDefaultBufferSize(mWidth, mHeight);
-            mOESSurfaceTexture.setOnFrameAvailableListener(this);
-        }
-        return mOESSurfaceTexture;
-    }
-
-    public synchronized void close() {
-        running = false;
-        if (mOESSurfaceTexture != null) {
-            mOESSurfaceTexture.setOnFrameAvailableListener(null);
-            mOESSurfaceTexture.release();
-            mOESSurfaceTexture = null;
-        }
-    }
-
-    @Override
-    public final synchronized void start() {
-    }
-
-    @Override
-    public void run() {
-        initEGL();
-        creatShaderProgram();//创建着色器程序
-        setupShaderAttributeID();//获取着色器中自定义变量的索引
-        setupOutputFrame();//设置双缓冲帧
-        while (running) {
-            synchronized (TextureReader.this) {
-                if (frameAvailable && running) {
-                    frameAvailable = false;
-                    drawTexture();
-                }
-            }
-        }
-        releaseGL();
-        releaseEGL();
     }
 
     private void initEGL() {
@@ -325,6 +281,54 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         }
     }
 
+    public void setOnImageAvailableListener(OnImageAvailableListener listener) {
+        this.mImageAvailableListener = listener;
+    }
+
+    public SurfaceTexture getSurfaceTexture() {
+        if (mOESSurfaceTexture == null) {
+            mOESSurfaceTexture = new SurfaceTexture(mOESTexture[0]);
+            mOESSurfaceTexture.setDefaultBufferSize(mWidth, mHeight);
+            mOESSurfaceTexture.setOnFrameAvailableListener(this);
+        }
+        return mOESSurfaceTexture;
+    }
+
+    public synchronized void close() {
+        if (mOESSurfaceTexture != null) {
+            mOESSurfaceTexture.setOnFrameAvailableListener(null);
+            mOESSurfaceTexture.release();
+            mOESSurfaceTexture = null;
+        }
+        releaseGL();
+        releaseEGL();
+    }
+
+    private void releaseGL() {
+        GLES20.glDeleteProgram(mGLShaderProgram);
+        GLES20.glDeleteTextures(1, mOESTexture, 0);
+        GLES20.glDeleteTextures(1, mOutputTexture, 0);
+        GLES20.glDeleteFramebuffers(1, mOutputFrame, 0);
+    }
+
+    private void releaseEGL() {
+        EGL14.eglMakeCurrent(mEGLDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+        if (mEGLSurface != null) {
+            EGL14.eglDestroySurface(mEGLDisplay, mEGLSurface);
+        }
+        if (mEGLContext != null) {
+            EGL14.eglDestroyContext(mEGLDisplay, mEGLContext);
+        }
+        EGL14.eglTerminate(mEGLDisplay);
+    }
+
+    @Override
+    public synchronized void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        if (mOESSurfaceTexture != null) {
+            drawTexture();
+        }
+    }
+
     private void drawTexture() {
         mOESSurfaceTexture.updateTexImage();
         GLES20.glViewport(0, 0, mWidth, mHeight);
@@ -378,37 +382,6 @@ public class TextureReader extends Thread implements SurfaceTexture.OnFrameAvail
         EGL14.eglSwapBuffers(mEGLDisplay, mEGLSurface);
 
         mOESSurfaceTexture.releaseTexImage();
-    }
-
-    @Override
-    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        synchronized (this) {
-            frameAvailable = true;
-        }
-    }
-
-    private void releaseGL() {
-        GLES20.glDeleteProgram(mGLShaderProgram);
-        GLES20.glDeleteTextures(1, mOESTexture, 0);
-        GLES20.glDeleteTextures(1, mOutputTexture, 0);
-        GLES20.glDeleteFramebuffers(1, mOutputFrame, 0);
-    }
-
-    private void releaseEGL() {
-        EGL14.eglMakeCurrent(mEGLDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-        if (mEGLSurface != null) {
-            EGL14.eglDestroySurface(mEGLDisplay, mEGLSurface);
-        }
-        if (mEGLContext != null) {
-            EGL14.eglDestroyContext(mEGLDisplay, mEGLContext);
-        }
-        EGL14.eglTerminate(mEGLDisplay);
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        running = false;
     }
 
 }
