@@ -11,7 +11,7 @@ A new frame for decode QR code and bar code on Android. It's faster, simpler and
 * [UML](#uml)
 * [Gradle](#gradle)
 * [Usage](#usage)
-* [Update plan](#updateplan)
+* [Update plan](#update-plan)
 * [Changelog](#changelog)
 * [Author](#author)
 
