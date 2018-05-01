@@ -1,17 +1,29 @@
 <resources>
     <string name="app_name">XCodeScanner</string>
-    <string name="instructions_title">说明</string>
-    <string name="instructions_content">
+    <string name="synopsis">简介</string>
+    <string name="synopsis_instructions">
         1.支持API14(Android4.0)及以上版本
         \n2.支持自动对焦
-        \n3.支持自定义布局
-        \n4.支持自定义扫描框
-        \n5.支持精度及条码类型过滤
-        \n6.支持前后台横竖屏切换</string>
-    <string name="scan_relative_old">扫码(RelativeLayout布局，旧API)</string>
-    <string name="scan_constraint_old">扫码(ConstraintLayout布局，旧API)</string>
-    <string name="scan_relative_new">扫码(RelativeLayout布局，新API)</string>
-    <string name="scan_constraint_new">扫码(ConstraintLayout布局，新API)</string>
+        \n3.支持精度及条码类型过滤
+        \n2.支持自定义布局、自定义扫描框
+        \n4.支持前后台横竖屏切换</string>
+
+    <string name="feedback_instructions">如果存在闪退、黑屏、图像变形、预览丢帧、反应迟钝、无法对焦、无法识别等问题，请尽可能及时且详细反馈给我，我会尽快安排解决</string>
+
+    <string name="feedback">反馈</string>
+    <string name="juejin">掘金</string>
+    <string name="jianshu">简书</string>
+    <string name="github">GitHub</string>
+    <string name="email">jmlixiaomeng@163.com</string>
+
+    <string name="api_old">旧API</string>
+    <string name="api_new">新API</string>
+    <string name="layout_relative">RelativeLayout布局</string>
+    <string name="layout_constraint">ConstraintLayout布局</string>
+    <string name="scan">扫码</string>
+    <string name="scan_debug">扫码(DEBUG)</string>
+
     <string name="tips_scan">将二维码/条码放入框内，即可自动扫描</string>
+    <string name="tips_scan_debug">解析图像每秒%1$d帧，平均耗时%2$dms</string>
 
 </resources>

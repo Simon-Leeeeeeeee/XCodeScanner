@@ -49,7 +49,7 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
-        implementation 'cn.simonlee.xcodescanner:zbar:1.1.4'
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.5'
     }
 ```
 
@@ -138,18 +138,21 @@ public void onRestart() {
 
 ## 更新计划
 
+*  增加本地图片识别功能。
 *  解决TextureView尺寸变化及padding&margin带来的一些问题。
 *  增加环境亮度监测，提示闪光灯开启。
-*  增加本地图片识别功能。
 *  增加Zxing支持。
 *  增加二维码生成功能。
 
 ## 版本记录
 
-*  V1.1.5   `待发布`
+*  V1.1.5   `2018/05/01`
    1. 解决申请权限闪退的问题。
-   2. 修改`ZBarDecoder`和`TextureReader`的实现方式，降低CPU占用。
-   3. 暂停/延时解码接口从`CameraScanner`迁移到`GraphicDecoder`，`CameraScanner`可能因为异步导致暂停后继续回调`decodeSuccess`接口。
+   2. 解决魅族MX5闪退的问题。
+   3. 修改`ZBarDecoder`和`TextureReader`的实现方式，降低CPU占用。
+   4. 新增`DebugZBarDecoder`，继承自`ZBarDecoder`,便于示例程序进行兼容性测试。
+   5. 暂停/延时解码接口从`CameraScanner`迁移到`GraphicDecoder`，`CameraScanner`可能因为异步导致暂停后继续回调`decodeSuccess`接口。
+   6. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.5`。
 
 *  V1.1.4   `2018/04/26`
    1. 解决Android4.2退出时闪退的问题。
@@ -228,6 +231,6 @@ public void onRestart() {
 
 如果您觉得有用，请动动小手给我一个**Star**来点鼓励吧:blush:
 
-|Author|E-mail|WeChat|
-|---|---|---|
-|Simon Lee|jmlixiaomeng@163.com|[![wechat](/wechat.png)](#关于作者 "私人微信哦~")|
+|Author|E-mail|博客|WeChat|
+|:---:|:---:|:---:|:---:|
+|Simon Lee|jmlixiaomeng@163.com|[简书](https://www.jianshu.com/p/65df16604646)<br/>[掘金](https://juejin.im/post/5adf0f166fb9a07ac23a62d1)|[![wechat](/wechat.png)](#关于作者 "私人微信哦~")|

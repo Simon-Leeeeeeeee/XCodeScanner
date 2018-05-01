@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="cn.simonlee.demo.xcodescanner">
+          package="cn.simonlee.demo.xcodescanner">
 
-    <uses-permission android:name="android.permission.CAMERA" /><!--相机-->
+    <uses-permission android:name="android.permission.CAMERA"/><!--相机-->
 
     <application
         android:name=".APP"
@@ -14,15 +14,19 @@
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.MAIN"/>
 
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <activity
             android:name=".ScanActivity"
             android:launchMode="singleTask"
-            android:theme="@style/BlackAppTheme" />
+            android:theme="@style/BlackAppTheme"/>
+        <activity
+            android:name=".DebugScanActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/BlackAppTheme"/>
     </application>
 
 </manifest>

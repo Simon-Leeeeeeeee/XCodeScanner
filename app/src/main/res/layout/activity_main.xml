@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,55 +9,142 @@
         android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/instructions_title"
+            android:paddingBottom="5dp"
+            android:paddingLeft="10dp"
+            android:paddingTop="10dp"
+            android:text="@string/synopsis"
             android:textColor="@color/black"
-            android:textSize="22sp" />
+            android:textSize="20sp"/>
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:layout_marginLeft="30dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginTop="10dp"
-            android:text="@string/instructions_content"
+            android:paddingBottom="10dp"
+            android:paddingLeft="30dp"
+            android:paddingRight="5dp"
+            android:text="@string/synopsis_instructions"
             android:textColor="@color/black"
-            android:textSize="18sp" />
+            android:textSize="16sp"/>
 
-        <Button
-            android:id="@+id/btn_scan_relative_old"
-            android:layout_width="wrap_content"
+        <RadioGroup
+            android:id="@+id/radiogroup_layout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:text="@string/scan_relative_old" />
+            android:checkedButton="@id/radio_layout_relative"
+            android:orientation="horizontal"
+            android:padding="5dp">
 
-        <Button
-            android:id="@+id/btn_scan_relative_new"
-            android:layout_width="wrap_content"
+            <RadioButton
+                android:id="@+id/radio_layout_relative"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/layout_relative"/>
+
+            <RadioButton
+                android:id="@+id/radio_layout_constraint"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/layout_constraint"/>
+
+        </RadioGroup>
+
+        <RadioGroup
+            android:id="@+id/radiogroup_api"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:text="@string/scan_relative_new" />
+            android:checkedButton="@id/radio_api_old"
+            android:orientation="horizontal"
+            android:padding="5dp">
 
-        <Button
-            android:id="@+id/btn_scan_constraint_old"
-            android:layout_width="wrap_content"
+            <RadioButton
+                android:id="@+id/radio_api_old"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/api_old"/>
+
+            <RadioButton
+                android:id="@+id/radio_api_new"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/api_new"/>
+
+        </RadioGroup>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:layout_marginLeft="10dp"
-            android:text="@string/scan_constraint_old" />
+            android:orientation="horizontal"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
 
-        <Button
-            android:id="@+id/btn_scan_constraint_new"
-            android:layout_width="wrap_content"
+            <Button
+                android:id="@+id/btn_scan"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scan"/>
+
+            <Button
+                android:id="@+id/btn_scan_debug"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scan_debug"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:layout_marginLeft="10dp"
-            android:text="@string/scan_constraint_new" />
+            android:paddingBottom="5dp"
+            android:paddingLeft="10dp"
+            android:paddingTop="10dp"
+            android:text="@string/feedback"
+            android:textColor="@color/black"
+            android:textSize="20sp"/>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="30dp"
+            android:paddingRight="5dp"
+            android:text="@string/feedback_instructions"
+            android:textColor="@color/black"
+            android:textSize="16sp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <Button
+                android:id="@+id/btn_jianshu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/jianshu"/>
+
+            <Button
+                android:id="@+id/btn_juejin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/juejin"/>
+
+            <Button
+                android:id="@+id/btn_github"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/github"
+                android:textAllCaps="false"/>
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

@@ -439,7 +439,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                         if (mRectClipRatio == null || mRectClipRatio.isEmpty()) {//当未设置图像识别剪裁时，应以View的大小进行设置，防止未显示的图像被误识别
                             setFrameRect(0, 0, mPreviewSize.getWidth(), mPreviewSize.getHeight());
                         }
-                        mGraphicDecoder.decode(frameData, width, height, mRectClipRatio);
+                        mGraphicDecoder.decode(frameData, width, height, mRectClipRatio,0);
                     }
                 }
             };

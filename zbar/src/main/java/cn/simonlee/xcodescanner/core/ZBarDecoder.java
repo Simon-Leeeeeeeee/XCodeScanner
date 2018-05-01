@@ -170,9 +170,9 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
     }
 
     @Override
-    public synchronized void decode(byte[] frameData, int width, int height, RectF rectClipRatio) {
+    public synchronized void decode(byte[] frameData, int width, int height, RectF rectClipRatio, long timeStamp) {
         if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null && mArrayBlockingQueue.size() < 1) {
-            mExecutorService.execute(new DecodeRunnable(frameData, width, height, rectClipRatio));
+            mExecutorService.execute(new DecodeRunnable(frameData, width, height, rectClipRatio, timeStamp));
         }
     }
 
@@ -233,20 +233,28 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
     /**
      * 从Symbol集合中获取结果
      */
-    private void takeResult(SymbolSet symbolSet) {
-        if (symbolSet == null || mCurThreadHandler == null) return;
-        for (Symbol symbol : symbolSet) {
-            String result = symbol.getData();
-            if (result != null && result.length() > 0) {
-//                byte[] dataBytes = symbol.getDataBytes();
-//                int[] bounds = symbol.getBounds();
-//                int count = symbol.getCount();
-                int type = symbol.getType();
-                int quality = symbol.getQuality();
-                Log.d(TAG, getClass().getName() + ".zbarDecode() : type = " + type + " , quality = " + quality + " , result = " + result);
-                mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_DECODE_SUCCESS, type, quality, result));
-                break;
+    private void takeResult(SymbolSet symbolSet, long beginTimeStamp) {
+        if (symbolSet != null && mCurThreadHandler != null) {
+            for (Symbol symbol : symbolSet) {
+                String result = symbol.getData();
+                if (result != null && result.length() > 0) {
+//                  int count = symbol.getCount();
+//                  int[] bounds = symbol.getBounds();
+//                  byte[] dataBytes = symbol.getDataBytes();
+                    int type = symbol.getType();
+                    int quality = symbol.getQuality();
+                    decodeSuccess(result, type, quality, beginTimeStamp);
+                    return;
+                }
             }
+        }
+        decodeSuccess(null, 0, 0, beginTimeStamp);
+    }
+
+    public void decodeSuccess(String result, int type, int quality, long beginTimeStamp) {
+        if (result != null && mCurThreadHandler != null) {
+            Log.d(TAG, getClass().getName() + ".decodeSuccess() result = "+result+" , type = "+type+" , quality = "+quality);
+            mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_DECODE_SUCCESS, type, quality, result));
         }
     }
 
@@ -272,12 +280,14 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
         private final int mWidth;
         private final int mHeight;
         private final RectF mRectClipRatio;
+        private final long mBeginTimeStamp;
 
-        DecodeRunnable(byte[] frameData, int width, int height, RectF rectClipRatio) {
+        DecodeRunnable(byte[] frameData, int width, int height, RectF rectClipRatio, long beginTimeStamp) {
             this.mFrameData = frameData;
             this.mWidth = width;
             this.mHeight = height;
             this.mRectClipRatio = rectClipRatio;
+            this.mBeginTimeStamp = beginTimeStamp;
         }
 
         @Override
@@ -286,7 +296,7 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
                 //1.解析图像
                 SymbolSet symbolSet = decodeImage(mFrameData, mWidth, mHeight, mRectClipRatio);
                 //2.分析结果
-                takeResult(symbolSet);
+                takeResult(symbolSet, mBeginTimeStamp);
             }
         }
     }

@@ -16,7 +16,7 @@ public interface GraphicDecoder {
 
     void startDecodeDelay(int delay);
 
-    void decode(byte[] frameData, int width, int height, RectF rectClipRatio);
+    void decode(byte[] frameData, int width, int height, RectF rectClipRatio, long timeStamp);
 
     void detach();
 

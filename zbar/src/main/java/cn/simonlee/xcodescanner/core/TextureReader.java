@@ -156,14 +156,14 @@ public class TextureReader implements SurfaceTexture.OnFrameAvailableListener {
 
         EGLConfig[] configArray = new EGLConfig[1];
         int[] configAttributes = new int[]{
-                EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,        //渲染类型
+                EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,       //渲染类型
                 EGL14.EGL_BUFFER_SIZE, 32,                           //color buffer 的颜色深度 RGBA之和
                 EGL14.EGL_RED_SIZE, 8,                               //指定RGB中的R大小（bits）
                 EGL14.EGL_GREEN_SIZE, 8,                             //指定G大小
                 EGL14.EGL_BLUE_SIZE, 8,                              //指定B大小
                 EGL14.EGL_ALPHA_SIZE, 8,                             //指定Alpha大小，以上四项实际上指定了像素格式
                 EGL14.EGL_DEPTH_SIZE, 0,                             //指定深度缓存大小
-//                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT, //指定渲染api类别
+                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT, //指定渲染api类别
                 EGL14.EGL_STENCIL_SIZE, 1,
                 EGL14.EGL_NONE                                       //总是以EGL14.EGL_NONE结尾
         };

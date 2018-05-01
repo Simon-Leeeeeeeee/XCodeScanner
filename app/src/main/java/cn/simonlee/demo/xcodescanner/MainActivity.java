@@ -3,57 +3,91 @@ package cn.simonlee.demo.xcodescanner;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.RadioGroup;
 
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  */
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener {
 
-    private final int MODE_RO = 0;
-    private final int MODE_RN = 1;
-    private final int MODE_CO = 2;
-    private final int MODE_CN = 3;
+    private final int MODE_RELEASE = 0;
+    private final int MODE_DEBUG = 1;
+
+    private boolean newAPI = false;
+    private boolean constraintLayout = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        findViewById(R.id.btn_scan_relative_old).setOnClickListener(this);
-        findViewById(R.id.btn_scan_relative_new).setOnClickListener(this);
-        findViewById(R.id.btn_scan_constraint_old).setOnClickListener(this);
-        findViewById(R.id.btn_scan_constraint_new).setOnClickListener(this);
+        findViewById(R.id.btn_scan).setOnClickListener(this);
+        findViewById(R.id.btn_scan_debug).setOnClickListener(this);
+
+        findViewById(R.id.btn_jianshu).setOnClickListener(this);
+        findViewById(R.id.btn_juejin).setOnClickListener(this);
+        findViewById(R.id.btn_github).setOnClickListener(this);
+
+        ((RadioGroup) findViewById(R.id.radiogroup_api)).setOnCheckedChangeListener(this);
+        ((RadioGroup) findViewById(R.id.radiogroup_layout)).setOnCheckedChangeListener(this);
+    }
+
+    @Override
+    public void onCheckedChanged(RadioGroup group, int checkedId) {
+        switch (checkedId) {
+            case R.id.radio_api_old: {
+                newAPI = false;
+                break;
+            }
+            case R.id.radio_api_new: {
+                newAPI = true;
+                break;
+            }
+            case R.id.radio_layout_relative: {
+                constraintLayout = false;
+                break;
+            }
+            case R.id.radio_layout_constraint: {
+                constraintLayout = true;
+                break;
+            }
+        }
     }
 
     @Override
     public void onClick(View v) {
-        int mode = 0;
         switch (v.getId()) {
-            case R.id.btn_scan_relative_old: {
-                mode = MODE_RO;
-                break;
+            case R.id.btn_jianshu: {
+                Uri uri = Uri.parse("https://www.jianshu.com/p/65df16604646");
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+                return;
             }
-            case R.id.btn_scan_relative_new: {
-                mode = MODE_RN;
-                break;
+            case R.id.btn_juejin: {
+                Uri uri = Uri.parse("https://juejin.im/post/5adf0f166fb9a07ac23a62d1");
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+                return;
             }
-            case R.id.btn_scan_constraint_old: {
-                mode = MODE_CO;
-                break;
-            }
-            case R.id.btn_scan_constraint_new: {
-                mode = MODE_CN;
-                break;
+            case R.id.btn_github: {
+                Uri uri = Uri.parse("https://github.com/Simon-Leeeeeeeee/XCodeScanner");
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+                return;
             }
         }
+        int mode = v.getId() == R.id.btn_scan_debug ? MODE_DEBUG : MODE_RELEASE;
+
         int permissionState = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+
         if (permissionState == PackageManager.PERMISSION_GRANTED) {
             startScan(mode);
         } else {
@@ -72,14 +106,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void startScan(int mode) {
-        if (mode == MODE_RN || mode == MODE_CN) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                ToastHelper.showToast("新API需要Android5.0及以上", ToastHelper.LENGTH_SHORT);
-                return;
-            }
+        if (newAPI && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            ToastHelper.showToast("新API需要Android5.0及以上", ToastHelper.LENGTH_SHORT);
+            return;
         }
-        Intent intent = new Intent(this, ScanActivity.class);
-        intent.putExtra("mode", mode);
+        Intent intent = new Intent(this, mode == MODE_DEBUG ? DebugScanActivity.class : ScanActivity.class);
+        intent.putExtra("newAPI", newAPI);
+        intent.putExtra("constraintLayout", constraintLayout);
         startActivity(intent);
     }
 

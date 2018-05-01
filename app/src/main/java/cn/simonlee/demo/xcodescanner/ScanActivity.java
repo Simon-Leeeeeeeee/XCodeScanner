@@ -1,5 +1,6 @@
 package cn.simonlee.demo.xcodescanner;
 
+import android.content.Intent;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,21 +26,24 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     private ScannerFrameView mScannerFrameView;
 
     private CameraScanner mCameraScanner;
-    private GraphicDecoder mGraphicDecoder;
+    protected GraphicDecoder mGraphicDecoder;
 
-    private final String TAG = "XCodeScanner";
+    protected String TAG = "XCodeScanner";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, getClass().getName() + ".onCreate()");
         super.onCreate(savedInstanceState);
-        int mode = getIntent().getIntExtra("mode", 0);//0-RO 1-RN 2-CO 3-CN
-        setContentView(mode > 1 ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
+        Intent intent = getIntent();
+        boolean newAPI = intent.getBooleanExtra("newAPI", false);
+        boolean constraintLayout = intent.getBooleanExtra("constraintLayout", false);
+
+        setContentView(constraintLayout ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
 
         mTextureView = findViewById(R.id.textureview);
         mScannerFrameView = findViewById(R.id.scannerframe);
 
-        if (mode % 2 != 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (newAPI && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mCameraScanner = NewCameraScanner.getInstance();
         } else {
             mCameraScanner = OldCameraScanner.getInstance();
@@ -112,8 +116,8 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     public void openCameraSuccess(int frameWidth, int frameHeight, int frameDegree) {
         Log.e(TAG, getClass().getName() + ".openCameraSuccess() frameWidth = " + frameWidth + " , frameHeight = " + frameHeight + " , frameDegree = " + frameDegree);
         mTextureView.setImageFrameMatrix(frameWidth, frameHeight, frameDegree);
-        if (mGraphicDecoder == null) {
-            mGraphicDecoder = new ZBarDecoder();
+        if(mGraphicDecoder == null){
+            mGraphicDecoder = new ZBarDecoder();//使用带参构造方法可指定条码识别的格式
             mGraphicDecoder.setDecodeListener(this);
         }
         //该区域坐标为相对于父容器的左上角顶点。
@@ -155,7 +159,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
         } else {
             mCount = 1;
             mResult = result;
-            Log.e(TAG, getClass().getName() + ".decodeSuccess() -> "+mResult);
+            Log.e(TAG, getClass().getName() + ".decodeSuccess() -> " + mResult);
         }
     }
 
