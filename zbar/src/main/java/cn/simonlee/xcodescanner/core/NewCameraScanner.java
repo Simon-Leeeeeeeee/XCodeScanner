@@ -245,10 +245,46 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
+            mPreviewBuilder = null;
+            mCaptureSession = null;
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         mCameraLock.release();
+    }
+
+    @Override
+    public void openFlash() {
+        try {
+            mCameraLock.acquire();
+            if (mCaptureSession != null && mPreviewBuilder != null) {
+                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);//无限次的重复获取图像
+            }
+            mCameraLock.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void closeFlash() {
+        try {
+            mCameraLock.acquire();
+            if (mCaptureSession != null && mPreviewBuilder != null) {
+                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+                mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);//无限次的重复获取图像
+            }
+            mCameraLock.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -409,7 +445,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                     mCaptureSession = session;
                     try {
                         mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);//自动对焦
-                        //mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);//自动闪光灯
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);//自动曝光
                         mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);//无限次的重复获取图像
                         mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_SUCCESS_OPEN));
                     } catch (CameraAccessException e) {
@@ -440,7 +476,7 @@ public class NewCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                         if (mRectClipRatio == null || mRectClipRatio.isEmpty()) {//当未设置图像识别剪裁时，应以View的大小进行设置，防止未显示的图像被误识别
                             setFrameRect(0, 0, mPreviewSize.getWidth(), mPreviewSize.getHeight());
                         }
-                        mGraphicDecoder.decode(frameData, width, height, mRectClipRatio,0);
+                        mGraphicDecoder.decode(frameData, width, height, mRectClipRatio, 0);
                     }
                 }
             };

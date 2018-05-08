@@ -14,7 +14,9 @@
     <string name="juejin">掘金</string>
     <string name="jianshu">简书</string>
     <string name="github">GitHub</string>
-    <string name="email">jmlixiaomeng@163.com</string>
+
+    <string name="update">检查更新</string>
+    <string name="update_fail">检查更新失败</string>
 
     <string name="api_old">旧API</string>
     <string name="api_new">新API</string>
@@ -23,6 +25,8 @@
     <string name="local_image">本地图片</string>
     <string name="scan">扫码</string>
     <string name="scan_debug">扫码(DEBUG)</string>
+    <string name="flash_open">开启闪光灯</string>
+    <string name="flash_close">关闭闪光灯</string>
 
     <string name="tips_scan">将二维码/条码放入框内，即可自动扫描</string>
     <string name="tips_scan_debug">解析图像每秒%1$d帧，平均耗时%2$dms</string>

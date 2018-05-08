@@ -72,6 +72,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
     }
 
     private OldCameraScanner() {
+        mCameraLock = new Semaphore(1);
     }
 
     @Override
@@ -79,7 +80,6 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         final Context finalContext = context.getApplicationContext();
         startBackgroundThread();
         takeOrientation(finalContext);//获取设备方向
-        if (mCameraLock == null) mCameraLock = new Semaphore(1);
         mBackgroundHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -140,6 +140,36 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
     }
 
     @Override
+    public void openFlash() {
+        try {
+            mCameraLock.acquire();
+            if (mCamera != null) {
+                Camera.Parameters parameters = mCamera.getParameters();
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                mCamera.setParameters(parameters);
+            }
+            mCameraLock.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void closeFlash() {
+        try {
+            mCameraLock.acquire();
+            if (mCamera != null) {
+                Camera.Parameters parameters = mCamera.getParameters();
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                mCamera.setParameters(parameters);
+            }
+            mCameraLock.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public void detach() {
         Log.d(TAG, getClass().getName() + ".detach()");
         closeCamera();
@@ -157,7 +187,6 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
         mRectClipRatio = null;
         mSurfaceSize = null;
         mPreviewSize = null;
-        mCameraLock = null;
     }
 
     @Override

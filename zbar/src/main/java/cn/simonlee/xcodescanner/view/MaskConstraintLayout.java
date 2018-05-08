@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
 import android.support.annotation.ColorInt;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
@@ -79,11 +78,6 @@ public class MaskConstraintLayout extends ConstraintLayout {
      */
     public void setFrameOutsideColor(@ColorInt int frameOutsideColor) {
         this.mFrameOutsideColor = frameOutsideColor;
-    }
-
-    @Override
-    public void setBackground(Drawable background) {
-        super.setBackground(background);
     }
 
 }

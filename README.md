@@ -50,7 +50,7 @@ This project is based on the [ZBar](https://github.com/ZBar/ZBar) development. I
 Add the following code in module's `build.gradle`
 ```
     dependencies {
-        implementation 'cn.simonlee.xcodescanner:zbar:1.1.5'
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.6'
     }
 ```
 
@@ -139,16 +139,18 @@ public void onRestart() {
 
 ## Update plan
 
-*  Solve the problems caused by changes in the TextureView size.
-*  Support environmental brightness monitoring and support open the flash.
+*  Supports environmental brightness monitoring.
+*  Combining OpenCV to solve the problem of decoding complex graphics.
 *  Supports Zxing.
-*  Support generation QR code.
+*  Supports generation QR code.
 
 ## Changelog
 
 *  V1.1.6   `waiting for release`
-   1. `GraphicDecoder` supports  the decode of the local picture interface.
+   1. `GraphicDecoder` supports the decode of the local picture interface.
    2. Discarded the `decodeSuccess` interface in `GraphicDecoder.DecodeListener` and changed it to `decodeComplete`.
+   3. `GraphicDecoder` supports open the flash.
+   4. Solve the problem of displaying exceptions caused by `AdjustTextureView` size changes.
 
 *  V1.1.5   `2018/05/01`
    1. Solve the problem of application permission crash.

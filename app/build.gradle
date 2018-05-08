@@ -7,8 +7,8 @@ android {
         applicationId "cn.simonlee.demo.xcodescanner"
         minSdkVersion 14
         targetSdkVersion 27
-        versionCode 15
-        versionName "1.1.5"
+        versionCode 16
+        versionName "1.1.6"
 //         XCodeScanner默认编译所有平台so库，开发者可自行选择保留以减小APK体积
 //        ndk {
 //            abiFilters "armeabi","armeabi-v7a"

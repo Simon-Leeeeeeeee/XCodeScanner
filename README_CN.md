@@ -50,7 +50,7 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
-        implementation 'cn.simonlee.xcodescanner:zbar:1.1.5'
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.6'
     }
 ```
 
@@ -139,17 +139,18 @@ public void onRestart() {
 
 ## 更新计划
 
-*  解决导航栏显示/隐藏对TextureView造成的影响。
-*  解决TextureView尺寸变化及padding&margin带来的一些问题。
-*  增加环境亮度监测，提示闪光灯开启。
+*  增加环境亮度监测。
+*  结合OpenCV，提供二维码检测、二维码定位、角度校正、图像滤波等支持，以解决复杂图形的识别问题。
 *  增加Zxing支持。
 *  增加二维码生成功能。
 
 ## 版本记录
 
-*  V1.1.6   `待发布`
+*  V1.1.6   `2018/05/08`
    1. `GraphicDecoder`增加本地图片识别接口。
    2. 废弃`GraphicDecoder.DecodeListener`中的`decodeSuccess`回调，改为`decodeComplete`。
+   3. `CameraScanner`新增闪光灯控制接口。
+   4. 解决`AdjustTextureView`尺寸变化导致图像显示异常的问题。
 
 *  V1.1.5   `2018/05/01`
    1. 解决申请权限闪退的问题。

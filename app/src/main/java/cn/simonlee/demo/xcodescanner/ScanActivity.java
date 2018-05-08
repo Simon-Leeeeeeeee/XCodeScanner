@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.TextureView;
+import android.view.View;
+import android.widget.Button;
 
 import cn.simonlee.xcodescanner.core.CameraScanner;
 import cn.simonlee.xcodescanner.core.GraphicDecoder;
@@ -21,7 +23,7 @@ import cn.simonlee.xcodescanner.view.ScannerFrameView;
  * @e-mail jmlixiaomeng@163.com
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
-public class ScanActivity extends AppCompatActivity implements CameraScanner.CameraListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener {
+public class ScanActivity extends AppCompatActivity implements CameraScanner.CameraListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener, View.OnClickListener {
 
     private AdjustTextureView mTextureView;
     private ScannerFrameView mScannerFrameView;
@@ -43,6 +45,8 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
 
         mTextureView = findViewById(R.id.textureview);
         mScannerFrameView = findViewById(R.id.scannerframe);
+
+        findViewById(R.id.btn_flash).setOnClickListener(this);
 
         if (newAPI && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mCameraScanner = NewCameraScanner.getInstance();
@@ -162,6 +166,21 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
             mCount = 1;
             mResult = result;
             Log.e(TAG, getClass().getName() + ".decodeSuccess() -> " + mResult);
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.btn_flash) {
+            if (v.isSelected()) {
+                ((Button) v).setText(R.string.flash_open);
+                v.setSelected(false);
+                mCameraScanner.closeFlash();
+            } else {
+                ((Button) v).setText(R.string.flash_close);
+                v.setSelected(true);
+                mCameraScanner.openFlash();
+            }
         }
     }
 

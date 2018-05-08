@@ -164,6 +164,12 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
 
     @Override
     public void stopDecode() {
+        if (mArrayBlockingQueue != null) {
+            mArrayBlockingQueue.clear();
+        }
+        if (mCurThreadHandler != null) {
+            mCurThreadHandler.removeMessages(HANDLER_DECODE_DELAY);
+        }
         this.isDecodeEnabled = false;
     }
 
@@ -333,6 +339,13 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
         private RectF mRectClipRatio;
         private long mBeginTimeStamp;
 
+        DecodeRunnable(Context context, Uri uri, int requestCode, long beginTimeStamp) {
+            this.mRequestCode = requestCode;
+            this.mContext = context;
+            this.mUri = uri;
+            this.mBeginTimeStamp = beginTimeStamp;
+        }
+
         DecodeRunnable(Bitmap bitmap, RectF rectClipRatio, int requestCode, long beginTimeStamp) {
             this.mRequestCode = requestCode;
             this.mBitmap = bitmap;
@@ -356,13 +369,6 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
             this.mWidth = width;
             this.mHeight = height;
             this.mRectClipRatio = rectClipRatio;
-            this.mBeginTimeStamp = beginTimeStamp;
-        }
-
-        DecodeRunnable(Context context, Uri uri, int requestCode, long beginTimeStamp) {
-            this.mRequestCode = requestCode;
-            this.mContext = context;
-            this.mUri = uri;
             this.mBeginTimeStamp = beginTimeStamp;
         }
 

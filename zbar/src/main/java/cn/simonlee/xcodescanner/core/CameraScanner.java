@@ -7,7 +7,7 @@ import android.graphics.SurfaceTexture;
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
- * @createdTime 2018-04-13
+ * @createdTime 2018-04-13  11:24
  */
 public interface CameraScanner {
 
@@ -20,6 +20,16 @@ public interface CameraScanner {
      * 关闭相机
      */
     void closeCamera();
+
+    /**
+     * 打开闪光灯
+     */
+    void openFlash();
+
+    /**
+     * 关闭闪光灯
+     */
+    void closeFlash();
 
     void detach();
 
