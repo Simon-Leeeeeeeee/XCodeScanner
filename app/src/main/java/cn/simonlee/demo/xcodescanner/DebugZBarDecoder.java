@@ -10,7 +10,9 @@ import cn.simonlee.xcodescanner.core.BaseHandler;
 import cn.simonlee.xcodescanner.core.ZBarDecoder;
 
 /**
- * Created by Lxmeng on 2018/5/1.
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
 public class DebugZBarDecoder extends ZBarDecoder {
 
@@ -40,13 +42,12 @@ public class DebugZBarDecoder extends ZBarDecoder {
     @Override
     public synchronized void decode(byte[] frameData, int width, int height, RectF rectClipRatio, long timeStamp) {
         FPS++;
-        timeStamp = System.currentTimeMillis();
-        super.decode(frameData, width, height, rectClipRatio, timeStamp);
+        super.decode(frameData, width, height, rectClipRatio, System.currentTimeMillis());
     }
 
     @Override
-    public void decodeSuccess(String result, int type, int quality, long beginTimeStamp) {
-        super.decodeSuccess(result, type, quality, beginTimeStamp);
+    public void decodeComplete(String result, int type, int quality, int requestCode, long beginTimeStamp) {
+        super.decodeComplete(result, type, quality, requestCode, beginTimeStamp);
         if (timeExpendList.size() >= 60) {
             totalTimeExpend -= timeExpendList.removeFirst();
         }

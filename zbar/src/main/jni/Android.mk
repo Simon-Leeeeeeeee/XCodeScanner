@@ -40,6 +40,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_LOCAL_PATH)
 LOCAL_MODULE := zbarjni
+
 LOCAL_SRC_FILES := zbarjni.c \
 		   zbar/img_scanner.c \
 		   zbar/decoder.c \

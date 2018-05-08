@@ -4,11 +4,12 @@ import android.annotation.SuppressLint;
 import android.support.annotation.StringRes;
 import android.widget.Toast;
 
+
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
-
 @SuppressWarnings("unused")
 @SuppressLint("ShowToast")
 public class ToastHelper {

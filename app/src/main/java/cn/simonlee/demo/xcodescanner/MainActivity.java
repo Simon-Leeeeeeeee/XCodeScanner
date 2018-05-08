@@ -1,22 +1,29 @@
 package cn.simonlee.demo.xcodescanner;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.RadioGroup;
+
+import cn.simonlee.xcodescanner.core.GraphicDecoder;
+import cn.simonlee.xcodescanner.core.ZBarDecoder;
 
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener, GraphicDecoder.DecodeListener {
 
     private final int MODE_RELEASE = 0;
     private final int MODE_DEBUG = 1;
@@ -24,11 +31,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean newAPI = false;
     private boolean constraintLayout = false;
 
+    private String TAG = "XCodeScanner";
+
+    private GraphicDecoder mGraphicDecoder;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        findViewById(R.id.btn_local).setOnClickListener(this);
         findViewById(R.id.btn_scan).setOnClickListener(this);
         findViewById(R.id.btn_scan_debug).setOnClickListener(this);
 
@@ -65,6 +77,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.btn_local: {
+                //点击事件，而重定向到图片库
+                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(intent, 999);
+                return;
+            }
             case R.id.btn_jianshu: {
                 Uri uri = Uri.parse("https://www.jianshu.com/p/65df16604646");
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
@@ -96,6 +114,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 999 && resultCode == Activity.RESULT_OK && data != null) {
+            if (mGraphicDecoder == null) {
+                mGraphicDecoder = new ZBarDecoder();//使用带参构造方法可指定条码识别的格式
+                mGraphicDecoder.setDecodeListener(this);
+            }
+            mGraphicDecoder.decodeForResult(this, data.getData(), 999);
+        }
+    }
+
+    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -103,6 +133,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else {
             ToastHelper.showToast("请开启相机权限", ToastHelper.LENGTH_SHORT);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, getClass().getName() + ".onDestroy()");
+        if (mGraphicDecoder != null) {
+            mGraphicDecoder.setDecodeListener(null);
+            mGraphicDecoder.detach();
+        }
+        super.onDestroy();
     }
 
     private void startScan(int mode) {
@@ -116,4 +156,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         startActivity(intent);
     }
 
+    @Override
+    public void decodeComplete(String result, int type, int quality, int requestCode) {
+        if (result == null) {
+            ToastHelper.showToast("未识别到条码呀", ToastHelper.LENGTH_SHORT);
+        } else {
+            if (quality < 10) {
+                ToastHelper.showToast("[类型" + type + "/精度00" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+            } else if (quality < 100) {
+                ToastHelper.showToast("[类型" + type + "/精度0" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+            } else {
+                ToastHelper.showToast("[类型" + type + "/精度" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+            }
+        }
+    }
 }

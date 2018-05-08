@@ -21,7 +21,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
- * @createdTime 2018-04-13 11:26
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
+ * @createdTime 2018-04-13
  */
 public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerListener {
 

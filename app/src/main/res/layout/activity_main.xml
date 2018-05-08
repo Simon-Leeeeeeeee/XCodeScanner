@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
             android:paddingTop="10dp"
             android:text="@string/synopsis"
             android:textColor="@color/black"
-            android:textSize="20sp"/>
+            android:textSize="20sp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             android:paddingRight="5dp"
             android:text="@string/synopsis_instructions"
             android:textColor="@color/black"
-            android:textSize="16sp"/>
+            android:textSize="16sp" />
 
         <RadioGroup
             android:id="@+id/radiogroup_layout"
@@ -41,14 +41,17 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/layout_relative"/>
+                android:lines="1"
+                android:text="@string/layout_relative" />
 
             <RadioButton
                 android:id="@+id/radio_layout_constraint"
                 android:layout_width="0dp"
+                android:ellipsize="end"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/layout_constraint"/>
+                android:lines="1"
+                android:text="@string/layout_constraint" />
 
         </RadioGroup>
 
@@ -65,14 +68,16 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/api_old"/>
+                android:lines="1"
+                android:text="@string/api_old" />
 
             <RadioButton
                 android:id="@+id/radio_api_new"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/api_new"/>
+                android:lines="1"
+                android:text="@string/api_new" />
 
         </RadioGroup>
 
@@ -86,16 +91,23 @@
             <Button
                 android:id="@+id/btn_scan"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="@string/scan"/>
+                android:text="@string/scan" />
 
             <Button
                 android:id="@+id/btn_scan_debug"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="@string/scan_debug"/>
+                android:text="@string/scan_debug" />
+
+            <Button
+                android:id="@+id/btn_local"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="@string/local_image" />
 
         </LinearLayout>
 
@@ -107,7 +119,7 @@
             android:paddingTop="10dp"
             android:text="@string/feedback"
             android:textColor="@color/black"
-            android:textSize="20sp"/>
+            android:textSize="20sp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -116,7 +128,7 @@
             android:paddingRight="5dp"
             android:text="@string/feedback_instructions"
             android:textColor="@color/black"
-            android:textSize="16sp"/>
+            android:textSize="16sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -129,22 +141,25 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/jianshu"/>
+                android:lines="1"
+                android:text="@string/jianshu" />
 
             <Button
                 android:id="@+id/btn_juejin"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/juejin"/>
+                android:lines="1"
+                android:text="@string/juejin" />
 
             <Button
                 android:id="@+id/btn_github"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:lines="1"
                 android:text="@string/github"
-                android:textAllCaps="false"/>
+                android:textAllCaps="false" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

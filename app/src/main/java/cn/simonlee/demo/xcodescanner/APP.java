@@ -2,6 +2,11 @@ package cn.simonlee.demo.xcodescanner;
 
 import android.app.Application;
 
+/**
+ * @author Simon Lee
+ * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
+ */
 public class APP extends Application {
     private static APP mAPP;
 

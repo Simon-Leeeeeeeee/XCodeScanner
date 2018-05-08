@@ -20,6 +20,7 @@
     <string name="api_new">新API</string>
     <string name="layout_relative">RelativeLayout布局</string>
     <string name="layout_constraint">ConstraintLayout布局</string>
+    <string name="local_image">本地图片</string>
     <string name="scan">扫码</string>
     <string name="scan_debug">扫码(DEBUG)</string>
 

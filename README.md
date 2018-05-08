@@ -2,7 +2,7 @@
 
 A new frame for decode QR code and bar code on Android. It's faster, simpler and more accurate. It's based on ZBar, compatible with Android4.0 (API14) and above.
 
-[中国人当然看中文的](/README_CN.md)
+[中国人当然看中文的](https://github.com/Simon-Leeeeeeeee/XCodeScanner/blob/master/README_CN.md)
 
 ## Catalog
 
@@ -139,13 +139,16 @@ public void onRestart() {
 
 ## Update plan
 
-*  Support decode local pictures.
 *  Solve the problems caused by changes in the TextureView size.
 *  Support environmental brightness monitoring and support open the flash.
 *  Supports Zxing.
 *  Support generation QR code.
 
 ## Changelog
+
+*  V1.1.6   `waiting for release`
+   1. `GraphicDecoder` supports  the decode of the local picture interface.
+   2. Discarded the `decodeSuccess` interface in `GraphicDecoder.DecodeListener` and changed it to `decodeComplete`.
 
 *  V1.1.5   `2018/05/01`
    1. Solve the problem of application permission crash.

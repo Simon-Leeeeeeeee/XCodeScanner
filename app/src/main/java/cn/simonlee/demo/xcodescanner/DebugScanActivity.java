@@ -7,6 +7,7 @@ import android.widget.TextView;
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
 public class DebugScanActivity extends ScanActivity implements DebugZBarDecoder.ZBarDebugListener {
 

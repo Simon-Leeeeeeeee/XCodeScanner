@@ -19,6 +19,7 @@ import cn.simonlee.xcodescanner.view.ScannerFrameView;
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
 public class ScanActivity extends AppCompatActivity implements CameraScanner.CameraListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener {
 
@@ -145,7 +146,8 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     String mResult = null;
 
     @Override
-    public void decodeSuccess(int type, int quality, String result) {
+    public void decodeComplete(String result, int type, int quality, int requestCode) {
+        if (result == null) return;
         if (result.equals(mResult)) {
             if (++mCount > 3) {//连续四次相同则显示结果（主要过滤脏数据，也可以根据条码类型自定义规则）
                 if (quality < 10) {

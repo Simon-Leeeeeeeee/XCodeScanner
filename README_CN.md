@@ -9,6 +9,7 @@
 * [UML类图](#uml类图)
 * [集成方式](#集成方式)
 * [使用方式](#使用方式)
+* [常见问题](#常见问题)
 * [更新计划](#更新计划)
 * [版本记录](#版本记录)
 * [关于作者](#关于作者)
@@ -138,13 +139,17 @@ public void onRestart() {
 
 ## 更新计划
 
-*  增加本地图片识别功能。
+*  解决导航栏显示/隐藏对TextureView造成的影响。
 *  解决TextureView尺寸变化及padding&margin带来的一些问题。
 *  增加环境亮度监测，提示闪光灯开启。
 *  增加Zxing支持。
 *  增加二维码生成功能。
 
 ## 版本记录
+
+*  V1.1.6   `待发布`
+   1. `GraphicDecoder`增加本地图片识别接口。
+   2. 废弃`GraphicDecoder.DecodeListener`中的`decodeSuccess`回调，改为`decodeComplete`。
 
 *  V1.1.5   `2018/05/01`
    1. 解决申请权限闪退的问题。

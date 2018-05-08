@@ -11,10 +11,11 @@ import android.widget.RelativeLayout;
 
 import cn.simonlee.xcodescanner.R;
 
-
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
+ * @createdTime 2018-02-02
  */
 @SuppressWarnings("unused")
 public class MaskRelativeLayout extends RelativeLayout {

@@ -9,6 +9,10 @@ android {
         targetSdkVersion 27
         versionCode 15
         versionName "1.1.5"
+//         XCodeScanner默认编译所有平台so库，开发者可自行选择保留以减小APK体积
+//        ndk {
+//            abiFilters "armeabi","armeabi-v7a"
+//        }
     }
     buildTypes {
         release {
@@ -21,7 +25,8 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    compileOnly 'com.android.support.constraint:constraint-layout:1.1.0'
+
     api project(':zbar')
-//    compile 'cn.simonlee.xcodescanner:zbar:1.1.5'
+//    implementation 'cn.simonlee.xcodescanner:zbar:1.1.5'
 }

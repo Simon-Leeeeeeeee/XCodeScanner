@@ -1,6 +1,11 @@
 package cn.simonlee.xcodescanner.core;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.RectF;
+import android.net.Uri;
+import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
 
@@ -10,6 +15,9 @@ import net.sourceforge.zbar.ImageScanner;
 import net.sourceforge.zbar.Symbol;
 import net.sourceforge.zbar.SymbolSet;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
+ * @createdTime 2018-03-14
  * 存在的问题：
  * 1.像素太高时会导致二维码无法识别，限制为1920*1080暂无问题
  * 2.条码误读为DataBar(RSS-14)格式，此格式不常见，屏蔽即可
@@ -106,7 +116,7 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
     private ArrayBlockingQueue<Runnable> mArrayBlockingQueue;
 
     private final int HANDLER_DECODE_DELAY = 60001;
-    private final int HANDLER_DECODE_SUCCESS = 60002;
+    private final int HANDLER_DECODE_COMPLETE = 60002;
 
     private volatile boolean isDecodeEnabled;//解码开关，默认为true
 
@@ -125,7 +135,7 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
         this.mCurThreadHandler = new BaseHandler(this);
         startDecode();
         initZBar(symbolTypeArray);
-        mArrayBlockingQueue = new ArrayBlockingQueue<>(1);
+        mArrayBlockingQueue = new ArrayBlockingQueue<>(5);//等待队列最多插入5条任务
         mExecutorService = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, mArrayBlockingQueue);
     }
 
@@ -170,8 +180,32 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
     }
 
     @Override
+    public synchronized void decodeForResult(Context context, Uri uri, int requestCode) {
+        if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null) {
+            mArrayBlockingQueue.clear();
+            mExecutorService.execute(new DecodeRunnable(context.getApplicationContext(), uri, requestCode, System.currentTimeMillis()));
+        }
+    }
+
+    @Override
+    public synchronized void decodeForResult(Bitmap bitmap, RectF rectClipRatio, int requestCode) {
+        if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null) {
+            mArrayBlockingQueue.clear();
+            mExecutorService.execute(new DecodeRunnable(bitmap, rectClipRatio, requestCode, System.currentTimeMillis()));
+        }
+    }
+
+    @Override
+    public synchronized void decodeForResult(int[] pixels, int width, int height, RectF rectClipRatio, int requestCode) {
+        if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null) {
+            mArrayBlockingQueue.clear();
+            mExecutorService.execute(new DecodeRunnable(pixels, width, height, rectClipRatio, requestCode, System.currentTimeMillis()));
+        }
+    }
+
+    @Override
     public synchronized void decode(byte[] frameData, int width, int height, RectF rectClipRatio, long timeStamp) {
-        if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null && mArrayBlockingQueue.size() < 1) {
+        if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null && mArrayBlockingQueue.size() < 1) {//等待队列只能有一条任务
             mExecutorService.execute(new DecodeRunnable(frameData, width, height, rectClipRatio, timeStamp));
         }
     }
@@ -233,7 +267,7 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
     /**
      * 从Symbol集合中获取结果
      */
-    private void takeResult(SymbolSet symbolSet, long beginTimeStamp) {
+    private void takeResult(SymbolSet symbolSet, int requestCode, long beginTimeStamp) {
         if (symbolSet != null && mCurThreadHandler != null) {
             for (Symbol symbol : symbolSet) {
                 String result = symbol.getData();
@@ -243,31 +277,41 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
 //                  byte[] dataBytes = symbol.getDataBytes();
                     int type = symbol.getType();
                     int quality = symbol.getQuality();
-                    decodeSuccess(result, type, quality, beginTimeStamp);
+                    decodeComplete(result, type, quality, requestCode, beginTimeStamp);
                     return;
                 }
             }
         }
-        decodeSuccess(null, 0, 0, beginTimeStamp);
+        decodeComplete(null, 0, 0, requestCode, beginTimeStamp);
     }
 
-    public void decodeSuccess(String result, int type, int quality, long beginTimeStamp) {
-        if (result != null && mCurThreadHandler != null) {
-            Log.d(TAG, getClass().getName() + ".decodeSuccess() result = "+result+" , type = "+type+" , quality = "+quality);
-            mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_DECODE_SUCCESS, type, quality, result));
+    public void decodeComplete(String result, int type, int quality, int requestCode, long beginTimeStamp) {
+        if (mCurThreadHandler != null) {
+            Message message = mCurThreadHandler.obtainMessage(HANDLER_DECODE_COMPLETE);
+            Bundle bundle = message.getData();
+            bundle.putString("result", result);
+            bundle.putInt("type", type);
+            bundle.putInt("quality", quality);
+            bundle.putInt("requestCode", requestCode);
+            message.setData(bundle);
+            mCurThreadHandler.sendMessage(message);
         }
     }
 
     @Override
-    public void handleMessage(Message msg) {
-        switch (msg.what) {
+    public void handleMessage(Message message) {
+        switch (message.what) {
             case HANDLER_DECODE_DELAY: {//开启解码
                 startDecode();
                 break;
             }
-            case HANDLER_DECODE_SUCCESS: {//解码成功
+            case HANDLER_DECODE_COMPLETE: {//解码成功
                 if (mDecodeListener != null && isDecodeEnabled) {
-                    mDecodeListener.decodeSuccess(msg.arg1, msg.arg2, (String) msg.obj);
+                    Bundle bundle = message.peekData();
+                    if (bundle != null) {
+                        mDecodeListener.decodeComplete(bundle.getString("result"), bundle.getInt("type"),
+                                bundle.getInt("quality"), bundle.getInt("requestCode"));
+                    }
                 }
                 break;
             }
@@ -276,28 +320,135 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
 
     private class DecodeRunnable implements Runnable {
 
-        private final byte[] mFrameData;
-        private final int mWidth;
-        private final int mHeight;
-        private final RectF mRectClipRatio;
-        private final long mBeginTimeStamp;
+        private Uri mUri;
+        private Context mContext;
+        private int mRequestCode;
 
-        DecodeRunnable(byte[] frameData, int width, int height, RectF rectClipRatio, long beginTimeStamp) {
-            this.mFrameData = frameData;
+        private Bitmap mBitmap;
+        private int[] mPixels;
+        private byte[] mYUVFrameData;
+
+        private int mWidth;
+        private int mHeight;
+        private RectF mRectClipRatio;
+        private long mBeginTimeStamp;
+
+        DecodeRunnable(Bitmap bitmap, RectF rectClipRatio, int requestCode, long beginTimeStamp) {
+            this.mRequestCode = requestCode;
+            this.mBitmap = bitmap;
+            this.mWidth = bitmap.getWidth();
+            this.mHeight = bitmap.getHeight();
+            this.mRectClipRatio = rectClipRatio;
+            this.mBeginTimeStamp = beginTimeStamp;
+        }
+
+        DecodeRunnable(int[] pixels, int width, int height, RectF rectClipRatio, int requestCode, long beginTimeStamp) {
+            this.mRequestCode = requestCode;
+            this.mPixels = pixels;
             this.mWidth = width;
             this.mHeight = height;
             this.mRectClipRatio = rectClipRatio;
             this.mBeginTimeStamp = beginTimeStamp;
         }
 
+        DecodeRunnable(byte[] frameData, int width, int height, RectF rectClipRatio, long beginTimeStamp) {
+            this.mYUVFrameData = frameData;
+            this.mWidth = width;
+            this.mHeight = height;
+            this.mRectClipRatio = rectClipRatio;
+            this.mBeginTimeStamp = beginTimeStamp;
+        }
+
+        DecodeRunnable(Context context, Uri uri, int requestCode, long beginTimeStamp) {
+            this.mRequestCode = requestCode;
+            this.mContext = context;
+            this.mUri = uri;
+            this.mBeginTimeStamp = beginTimeStamp;
+        }
+
         @Override
         public void run() {
             synchronized (decodeLock) {
-                //1.解析图像
-                SymbolSet symbolSet = decodeImage(mFrameData, mWidth, mHeight, mRectClipRatio);
-                //2.分析结果
-                takeResult(symbolSet, mBeginTimeStamp);
+                //1.获取YUV图像
+                if (mYUVFrameData == null) {
+                    if (mPixels == null) {
+                        if (mBitmap == null) {
+                            mBitmap = getBitmap(mContext, mUri);
+                        }
+                        if (mBitmap != null) {
+                            mWidth = mBitmap.getWidth();
+                            mHeight = mBitmap.getHeight();
+                        }
+                        mPixels = getBitmapPixels(mBitmap);
+                    }
+                    mYUVFrameData = getYUVFrameData(mPixels, mWidth, mHeight);
+                }
+                //2.解析图像
+                SymbolSet symbolSet = decodeImage(mYUVFrameData, mWidth, mHeight, mRectClipRatio);
+                //3.分析结果
+                takeResult(symbolSet, mRequestCode, mBeginTimeStamp);
             }
         }
+
     }
+
+    private Bitmap getBitmap(Context context, Uri uri) {
+        if (uri == null) return null;
+        InputStream inputStream = null;
+        try {
+            inputStream = context.getContentResolver().openInputStream(uri);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        Bitmap bitmap = BitmapFactory.decodeStream(inputStream, null, options);
+        if (inputStream != null) {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return bitmap;
+    }
+
+    private int[] getBitmapPixels(Bitmap bitmap) {
+        if (bitmap == null) return null;
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int[] pixels = new int[width * height];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+        bitmap.recycle();
+        return pixels;
+    }
+
+    private byte[] getYUVFrameData(int[] pixels, int width, int height) {
+        if (pixels == null) return null;
+
+        int index = 0;
+        int yIndex = 0;
+        int R, G, B, Y, U, V;
+        byte[] frameData = new byte[width * height];
+
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                R = (pixels[index] & 0xff0000) >> 16;
+                G = (pixels[index] & 0xff00) >> 8;
+                B = (pixels[index] & 0xff);
+
+                Y = ((66 * R + 129 * G + 25 * B + 128) >> 8) + 16;
+//                U = ( ( -38 * R -  74 * G + 112 * B + 128) >> 8) + 128;
+//                V = ( ( 112 * R -  94 * G -  18 * B + 128) >> 8) + 128;
+
+                frameData[yIndex++] = (byte) (Math.max(0, Math.min(Y, 255)));
+//                if (j % 2 == 0 && index % 2 == 0) {
+//                    yuv420sp[uvIndex++] = (byte)(Math.max(0, Math.min(U, 255)));
+//                    yuv420sp[uvIndex++] = (byte)(Math.max(0, Math.min(V, 255)));
+//                }
+                index++;
+            }
+        }
+        return frameData;
+    }
+
 }

@@ -9,6 +9,8 @@ import java.lang.ref.WeakReference;
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
+ * @createdTime 2018-02-02
  */
 public class BaseHandler extends Handler {
 

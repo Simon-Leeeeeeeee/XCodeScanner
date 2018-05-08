@@ -12,11 +12,11 @@ import android.view.View;
 
 import cn.simonlee.xcodescanner.R;
 
-
 /**
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
- * @createdTime 2018-04-10 10:50
+ * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
+ * @createdTime 2018-04-10
  */
 @SuppressWarnings("unused")
 public class MaskConstraintLayout extends ConstraintLayout {
