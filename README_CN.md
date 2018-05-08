@@ -150,6 +150,7 @@ public void onRestart() {
    2. 废弃`GraphicDecoder.DecodeListener`中的`decodeSuccess`回调，改为`decodeComplete`。
    3. `CameraScanner`新增闪光灯控制接口。
    4. 解决`AdjustTextureView`尺寸变化导致图像显示异常的问题。
+   5. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.6`。
 
 *  V1.1.5   `2018/05/01`
    1. 解决申请权限闪退的问题。

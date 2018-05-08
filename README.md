@@ -151,6 +151,7 @@ public void onRestart() {
    2. Discarded the `decodeSuccess` interface in `GraphicDecoder.DecodeListener` and changed it to `decodeComplete`.
    3. `GraphicDecoder` supports open the flash.
    4. Solve the problem of displaying exceptions caused by `AdjustTextureView` size changes.
+   5. Release the open library: `cn.simonlee.xcodescanner:zbar:1.1.6`。
 
 *  V1.1.5   `2018/05/01`
    1. Solve the problem of application permission crash.
@@ -158,26 +159,26 @@ public void onRestart() {
    3. Modify the implementation of `ZBarDecoder` and `TextureReader` to reduce CPU usage.
    4. Add `AdjustTextureView`, extended from `TextureView`, for ease of compatibility testing.
    5. The pause/delay decode interface is migrated from `CameraScanner` to `GraphicDecoder`. `CameraScanner` may continue to call back `decodeSuccess` after a pause because of asynchronous.
-   6. Release the open source library: `cn.simonlee.xcodescanner:zbar:1.1.5`.
+   6. Release the open library: `cn.simonlee.xcodescanner:zbar:1.1.5`.
 
 *  V1.1.4   `2018/04/26`
    1. Solve the crash problem when running on Android4.2.
    2. Solve the problem that some low-end devices may preview severe dropped frames.
    3. Solve the problem that `OldCameraScanner` does not start decoding by default.
-   4. Release the open source library: `cn.simonlee.xcodescanner:zbar:1.1.4`.
+   4. Release the open library: `cn.simonlee.xcodescanner:zbar:1.1.4`.
 
 *  V1.1.3   `2018/04/25`
    1. Solve the problem of running crashes on some x86 devices.
    2. Added `stopDecode()` and `startDecode(int delay)` for stop/start decoding.
    3. Change the ZBar package name to `cn.simonlee.xcodescanner` from `com.simonlee.xcodescanner`.
-   4. Release the open source library: `cn.simonlee.xcodescanner:zbar:1.1.3`.
+   4. Release the open library: `cn.simonlee.xcodescanner:zbar:1.1.3`.
 
 *  V1.1.2   `2018/04/24`
    1. Solve the problem that setting the decoding format in `ZBarDecoder` does not take effect.
 
 *  V1.1.1   `2018/04/16`
    1. Add the heightRatio attribute in `ScannerFrameView` to set the proportion of high relative to the parentView.
-   2. Release the open source library: `cn.simonlee.codescanner:zbar:1.1.1`.
+   2. Release the open library: `cn.simonlee.codescanner:zbar:1.1.1`.
 
 *  V1.1.0   `2018/04/16`
    1. Rewrite `ZBarDecoder` to solve the problem of bar code decodeing delay caused by single thread pool.
