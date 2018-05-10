@@ -64,7 +64,10 @@ public void onCreate(Bundle savedInstanceState) {
    setContentView(R.layout.activity_scan_constraint);
    mTextureView = findViewById(R.id.textureview);
    mTextureView.setSurfaceTextureListener(this);
-   if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+    /*
+    * Notice! NewCameraScanner can also be used for the device with SDK 21, but it may not be good enough to support new API.
+    * */
+   if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP) {//The example here filtered out SDK 21
       mCameraScanner = OldCameraScanner.getInstance();
    } else {
       mCameraScanner = NewCameraScanner.getInstance();
@@ -139,8 +142,9 @@ public void onRestart() {
 
 ## Update plan
 
-*  Supports environmental brightness monitoring.
+*  Scan line support drawable.
 *  Combining OpenCV to solve the problem of decoding complex graphics.
+*  Supports environmental brightness monitoring.
 *  Supports Zxing.
 *  Supports generation QR code.
 

@@ -63,7 +63,6 @@ public void onCreate(Bundle savedInstanceState) {
    setContentView(R.layout.activity_scan_constraint);
    mTextureView = findViewById(R.id.textureview);
    mTextureView.setSurfaceTextureListener(this);
-
     /*
     * 注意，SDK21的设备是可以使用NewCameraScanner的，但是可能存在对新API支持不够的情况，比如红米Note3（双网通Android5.0.2）
     * 开发者可自行配置使用规则，比如针对某设备型号过滤，或者针对某SDK版本过滤
