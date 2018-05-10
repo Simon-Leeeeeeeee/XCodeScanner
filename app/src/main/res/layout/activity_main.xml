@@ -9,6 +9,16 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/textview_abi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingTop="10dp"
+            android:text="ABI"
+            android:textColor="@color/black"
+            android:textSize="14sp" />
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingBottom="5dp"

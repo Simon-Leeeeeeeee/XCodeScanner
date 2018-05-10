@@ -2,8 +2,6 @@
 
 一个Android平台更快更简单更精准的条形码及二维码解析框架。采用[ZBar](https://github.com/ZBar/ZBar)解析图像数据，兼容` Android4.0 (API14) `及以上版本。
 
->**前排：** 据反馈红米Note3（双网通 / MIUI 9.5.1.0 / Android 5.0.2）预览图像变形，需要真机调试，有愿意提供帮助的朋友请联系我（深圳·高新园）！
-
 ## 目录
 
 * [示例demo](#示例demo)
@@ -65,7 +63,12 @@ public void onCreate(Bundle savedInstanceState) {
    setContentView(R.layout.activity_scan_constraint);
    mTextureView = findViewById(R.id.textureview);
    mTextureView.setSurfaceTextureListener(this);
-   if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+
+    /*
+    * 注意，SDK21的设备是可以使用NewCameraScanner的，但是可能存在对新API支持不够的情况，比如红米Note3（双网通Android5.0.2）
+    * 开发者可自行配置使用规则，比如针对某设备型号过滤，或者针对某SDK版本过滤
+    * */
+   if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP) {//此处示例过滤掉了SDK21
       mCameraScanner = OldCameraScanner.getInstance();
    } else {
       mCameraScanner = NewCameraScanner.getInstance();
@@ -140,8 +143,9 @@ public void onRestart() {
 
 ## 更新计划
 
-*  增加环境亮度监测。
+*  增加扫描线自定义drawable。
 *  结合OpenCV，提供二维码检测、二维码定位、角度校正、图像滤波等支持，以解决复杂图形的识别问题。
+*  增加环境亮度监测。
 *  增加Zxing支持。
 *  增加二维码生成功能。
 

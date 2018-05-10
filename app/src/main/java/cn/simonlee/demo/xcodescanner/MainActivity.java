@@ -11,9 +11,9 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.RadioGroup;
+import android.widget.TextView;
 
 import cn.simonlee.xcodescanner.core.GraphicDecoder;
 import cn.simonlee.xcodescanner.core.ZBarDecoder;
@@ -30,8 +30,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private boolean newAPI = false;
     private boolean constraintLayout = false;
-
-    private String TAG = "XCodeScanner";
 
     private GraphicDecoder mGraphicDecoder;
 
@@ -50,6 +48,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         ((RadioGroup) findViewById(R.id.radiogroup_api)).setOnCheckedChangeListener(this);
         ((RadioGroup) findViewById(R.id.radiogroup_layout)).setOnCheckedChangeListener(this);
+
+        StringBuilder ABIBuilder = new StringBuilder();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            String[] ABIS = Build.SUPPORTED_ABIS;
+            for (String ABI : ABIS) {
+                ABIBuilder.append(ABI).append("/");
+            }
+        }
+        ((TextView) findViewById(R.id.textview_abi)).setText(ABIBuilder.append(android.os.Build.CPU_ABI));
     }
 
     @Override
@@ -136,7 +143,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, getClass().getName() + ".onDestroy()");
         if (mGraphicDecoder != null) {
             mGraphicDecoder.setDecodeListener(null);
             mGraphicDecoder.detach();

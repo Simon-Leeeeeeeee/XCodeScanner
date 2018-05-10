@@ -48,7 +48,11 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
 
         findViewById(R.id.btn_flash).setOnClickListener(this);
 
-        if (newAPI && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        /*
+        * 注意，SDK21的设备是可以使用NewCameraScanner的，但是可能存在对新API支持不够的情况，比如红米Note3（双网通Android5.0.2）
+        * 开发者可自行配置使用规则，比如针对某设备型号过滤，或者针对某SDK版本过滤
+        * */
+        if (newAPI && Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             mCameraScanner = NewCameraScanner.getInstance();
         } else {
             mCameraScanner = OldCameraScanner.getInstance();
@@ -121,7 +125,7 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     public void openCameraSuccess(int frameWidth, int frameHeight, int frameDegree) {
         Log.e(TAG, getClass().getName() + ".openCameraSuccess() frameWidth = " + frameWidth + " , frameHeight = " + frameHeight + " , frameDegree = " + frameDegree);
         mTextureView.setImageFrameMatrix(frameWidth, frameHeight, frameDegree);
-        if(mGraphicDecoder == null){
+        if (mGraphicDecoder == null) {
             mGraphicDecoder = new ZBarDecoder();//使用带参构造方法可指定条码识别的格式
             mGraphicDecoder.setDecodeListener(this);
         }
@@ -165,8 +169,8 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
         } else {
             mCount = 1;
             mResult = result;
-            Log.e(TAG, getClass().getName() + ".decodeSuccess() -> " + mResult);
         }
+        Log.d(TAG, getClass().getName() + ".decodeComplete() -> " + mResult);
     }
 
     @Override
