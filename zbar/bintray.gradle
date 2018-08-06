@@ -9,14 +9,15 @@ if (localPropertiesFile.exists()) {
     properties.load(localPropertiesFile.newDataInputStream())
 }
 
+def key_ProjectName = 'ZBar'//项目名称
+def key_ProjectDesc = 'A new frame for decode QR code and bar code on android.'//项目描述
+def key_ProjectVersion = '1.1.7'//项目版本
+def key_ProjectVersionDesc = ''//版本描述
+
 /*读取字段*/
 def key_ProjectVCS = properties.getProperty('project.vcs')
-def key_ProjectName = properties.getProperty('project.name')
-def key_ProjectDesc = properties.getProperty('project.desc')
 def key_ProjectGroupId = properties.getProperty('project.groupId')
 def key_ProjectWebsite = properties.getProperty('project.website')
-def key_ProjectVersion = properties.getProperty('project.version')
-def key_ProjectVersionDesc = properties.getProperty('project.version.desc')
 
 def key_BintrayKey = properties.getProperty('bintray.key')
 def key_BintrayUser = properties.getProperty('bintray.user')

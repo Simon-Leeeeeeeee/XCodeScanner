@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  * 4.EAN-13格式的条码部分情况下识别出现错误，表现在a.解析成其他格式 b.解析出错误条码，如6920586221399，与算法及分辨率有关，与条码图像无关
  */
 @SuppressWarnings("unused")
-public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListener {
+public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
 
     /**
      * Symbol detected but not decoded.
@@ -108,7 +109,7 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
 
     private final Object decodeLock = new Object();//互斥锁
 
-    private BaseHandler mCurThreadHandler;
+    private Handler mHandler;
 
     private DecodeListener mDecodeListener;
 
@@ -132,7 +133,7 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
      * 、DATABAR_EXP、CODABAR、CODE39、PDF417、QRCODE、CODE93、CODE128，可根据实际需要进行配置。
      */
     public ZBarDecoder(int[] symbolTypeArray) {
-        this.mCurThreadHandler = new BaseHandler(this);
+        this.mHandler = new Handler(this);
         startDecode();
         initZBar(symbolTypeArray);
         mArrayBlockingQueue = new ArrayBlockingQueue<>(5);//等待队列最多插入5条任务
@@ -167,8 +168,8 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
         if (mArrayBlockingQueue != null) {
             mArrayBlockingQueue.clear();
         }
-        if (mCurThreadHandler != null) {
-            mCurThreadHandler.removeMessages(HANDLER_DECODE_DELAY);
+        if (mHandler != null) {
+            mHandler.removeMessages(HANDLER_DECODE_DELAY);
         }
         this.isDecodeEnabled = false;
     }
@@ -180,8 +181,8 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
 
     @Override
     public void startDecodeDelay(int delay) {
-        if (mCurThreadHandler != null) {
-            mCurThreadHandler.sendMessageDelayed(mCurThreadHandler.obtainMessage(HANDLER_DECODE_DELAY), delay);
+        if (mHandler != null) {
+            mHandler.sendMessageDelayed(mHandler.obtainMessage(HANDLER_DECODE_DELAY), delay);
         }
     }
 
@@ -230,9 +231,9 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
             }
         }
         synchronized (decodeLock) {
-            if (mCurThreadHandler != null) {
-                mCurThreadHandler.clear();
-                mCurThreadHandler = null;
+            if (mHandler != null) {
+                mHandler.removeCallbacksAndMessages(null);
+                mHandler = null;
             }
             if (mZBarImage != null) {
                 mZBarImage.destroy();
@@ -274,7 +275,7 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
      * 从Symbol集合中获取结果
      */
     private void takeResult(SymbolSet symbolSet, int requestCode, long beginTimeStamp) {
-        if (symbolSet != null && mCurThreadHandler != null) {
+        if (symbolSet != null && mHandler != null) {
             for (Symbol symbol : symbolSet) {
                 String result = symbol.getData();
                 if (result != null && result.length() > 0) {
@@ -292,28 +293,28 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
     }
 
     public void decodeComplete(String result, int type, int quality, int requestCode, long beginTimeStamp) {
-        if (mCurThreadHandler != null) {
-            Message message = mCurThreadHandler.obtainMessage(HANDLER_DECODE_COMPLETE);
+        if (mHandler != null) {
+            Message message = mHandler.obtainMessage(HANDLER_DECODE_COMPLETE);
             Bundle bundle = message.getData();
             bundle.putString("result", result);
             bundle.putInt("type", type);
             bundle.putInt("quality", quality);
             bundle.putInt("requestCode", requestCode);
             message.setData(bundle);
-            mCurThreadHandler.sendMessage(message);
+            mHandler.sendMessage(message);
         }
     }
 
     @Override
-    public void handleMessage(Message message) {
-        switch (message.what) {
+    public boolean handleMessage(Message msg) {
+        switch (msg.what) {
             case HANDLER_DECODE_DELAY: {//开启解码
                 startDecode();
                 break;
             }
             case HANDLER_DECODE_COMPLETE: {//解码成功
                 if (mDecodeListener != null && isDecodeEnabled) {
-                    Bundle bundle = message.peekData();
+                    Bundle bundle = msg.peekData();
                     if (bundle != null) {
                         mDecodeListener.decodeComplete(bundle.getString("result"), bundle.getInt("type"),
                                 bundle.getInt("quality"), bundle.getInt("requestCode"));
@@ -322,6 +323,7 @@ public class ZBarDecoder implements GraphicDecoder, BaseHandler.BaseHandlerListe
                 break;
             }
         }
+        return true;
     }
 
     private class DecodeRunnable implements Runnable {

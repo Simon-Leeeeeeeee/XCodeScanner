@@ -7,6 +7,7 @@ import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Build;
+import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.support.v4.content.ContextCompat;
@@ -24,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  * @createdTime 2018-04-13
  */
-public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerListener {
+public class OldCameraScanner implements CameraScanner, Handler.Callback {
 
     private final int HANDLER_SUCCESS_OPEN = 70001;
     private final int HANDLER_FAIL_CLOSED = 80001;
@@ -48,8 +49,8 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
     private Size mPreviewSize;//预览View的尺寸
     private RectF mRectClipRatio;//扫码框区域相对于图像帧所占比例，且已根据mOrientation做校正
 
-    private BaseHandler mCurThreadHandler;//实例化线程对应的handler
-    private BaseHandler mBackgroundHandler;//子线程对应的handler
+    private Handler mCurThreadHandler;//实例化线程对应的handler
+    private Handler mBackgroundHandler;//子线程对应的handler
     private HandlerThread mBackgroundThread;//子线程
 
     private CameraListener mCameraListener;//相机设备回调
@@ -263,16 +264,20 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
 
     private void startBackgroundThread() {
         if (mCurThreadHandler == null) {
-            mCurThreadHandler = new BaseHandler(this);
+            mCurThreadHandler = new Handler(this);
         }
         if (mBackgroundThread == null) {
             mBackgroundThread = new HandlerThread("OldCameraScanner");
             mBackgroundThread.start();
-            mBackgroundHandler = new BaseHandler(null, mBackgroundThread.getLooper());
+            mBackgroundHandler = new Handler(mBackgroundThread.getLooper(), null);
         }
     }
 
     private void stopBackgroundThread() {
+        if (mCurThreadHandler != null) {
+            mCurThreadHandler.removeCallbacksAndMessages(null);
+            mCurThreadHandler = null;
+        }
         if (mBackgroundThread != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 mBackgroundThread.quitSafely();
@@ -281,12 +286,14 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
             }
             try {
                 mBackgroundThread.join();
-                mBackgroundHandler.clear();
                 mBackgroundThread = null;
-                mBackgroundHandler = null;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+        if (mBackgroundHandler != null) {
+            mBackgroundHandler.removeCallbacksAndMessages(null);
+            mBackgroundHandler = null;
         }
     }
 
@@ -376,7 +383,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
     }
 
     @Override
-    public void handleMessage(Message msg) {
+    public boolean handleMessage(Message msg) {
         switch (msg.what) {
             case HANDLER_SUCCESS_OPEN: {//开启成功
                 if (mCameraListener != null) {
@@ -414,6 +421,7 @@ public class OldCameraScanner implements CameraScanner, BaseHandler.BaseHandlerL
                 break;
             }
         }
+        return true;
     }
 
     private class Size {

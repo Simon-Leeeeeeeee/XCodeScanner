@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startScan(requestCode);
         } else {
-            ToastHelper.showToast("请开启相机权限", ToastHelper.LENGTH_SHORT);
+            ToastHelper.showToast(this,"请开启相机权限", ToastHelper.LENGTH_SHORT);
         }
     }
 
@@ -152,7 +152,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void startScan(int mode) {
         if (newAPI && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            ToastHelper.showToast("新API需要Android5.0及以上", ToastHelper.LENGTH_SHORT);
+            ToastHelper.showToast(this,"新API需要Android5.0及以上", ToastHelper.LENGTH_SHORT);
             return;
         }
         Intent intent = new Intent(this, mode == MODE_DEBUG ? DebugScanActivity.class : ScanActivity.class);
@@ -164,14 +164,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void decodeComplete(String result, int type, int quality, int requestCode) {
         if (result == null) {
-            ToastHelper.showToast("未识别到条码呀", ToastHelper.LENGTH_SHORT);
+            ToastHelper.showToast(this, "未识别到条码呀", ToastHelper.LENGTH_SHORT);
         } else {
             if (quality < 10) {
-                ToastHelper.showToast("[类型" + type + "/精度00" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                ToastHelper.showToast(this, "[类型" + type + "/精度00" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
             } else if (quality < 100) {
-                ToastHelper.showToast("[类型" + type + "/精度0" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                ToastHelper.showToast(this, "[类型" + type + "/精度0" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
             } else {
-                ToastHelper.showToast("[类型" + type + "/精度" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                ToastHelper.showToast(this, "[类型" + type + "/精度" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
             }
         }
     }

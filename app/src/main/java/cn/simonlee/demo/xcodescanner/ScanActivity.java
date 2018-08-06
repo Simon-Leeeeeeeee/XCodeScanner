@@ -137,17 +137,17 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
 
     @Override
     public void openCameraError() {
-        ToastHelper.showToast("出错了", ToastHelper.LENGTH_SHORT);
+        ToastHelper.showToast(this, "出错了", ToastHelper.LENGTH_SHORT);
     }
 
     @Override
     public void noCameraPermission() {
-        ToastHelper.showToast("没有权限", ToastHelper.LENGTH_SHORT);
+        ToastHelper.showToast(this, "没有权限", ToastHelper.LENGTH_SHORT);
     }
 
     @Override
     public void cameraDisconnected() {
-        ToastHelper.showToast("断开了连接", ToastHelper.LENGTH_SHORT);
+        ToastHelper.showToast(this, "断开了连接", ToastHelper.LENGTH_SHORT);
     }
 
     int mCount = 0;
@@ -159,11 +159,11 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
         if (result.equals(mResult)) {
             if (++mCount > 3) {//连续四次相同则显示结果（主要过滤脏数据，也可以根据条码类型自定义规则）
                 if (quality < 10) {
-                    ToastHelper.showToast("[类型" + type + "/精度00" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                    ToastHelper.showToast(this, "[类型" + type + "/精度00" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
                 } else if (quality < 100) {
-                    ToastHelper.showToast("[类型" + type + "/精度0" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                    ToastHelper.showToast(this, "[类型" + type + "/精度0" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
                 } else {
-                    ToastHelper.showToast("[类型" + type + "/精度" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+                    ToastHelper.showToast(this, "[类型" + type + "/精度" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
                 }
             }
         } else {

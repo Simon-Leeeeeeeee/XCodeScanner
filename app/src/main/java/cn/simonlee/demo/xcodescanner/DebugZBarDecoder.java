@@ -1,12 +1,11 @@
 package cn.simonlee.demo.xcodescanner;
 
 import android.graphics.RectF;
+import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
 import java.util.LinkedList;
 
-import cn.simonlee.xcodescanner.core.BaseHandler;
 import cn.simonlee.xcodescanner.core.ZBarDecoder;
 
 /**
@@ -17,7 +16,7 @@ import cn.simonlee.xcodescanner.core.ZBarDecoder;
 public class DebugZBarDecoder extends ZBarDecoder {
 
     private final String TAG = "XCodeScanner-Debug";
-    private BaseHandler mCurThreadHandler;
+    private Handler mHandler;
     private ZBarDebugListener mZBarDebugListener;
     private int FPS;
     private long totalTimeExpend;
@@ -35,8 +34,8 @@ public class DebugZBarDecoder extends ZBarDecoder {
      */
     public DebugZBarDecoder(int[] symbolTypeArray) {
         super(symbolTypeArray);
-        this.mCurThreadHandler = new BaseHandler(this);
-        mCurThreadHandler.sendEmptyMessageDelayed(1991, 1000);
+        this.mHandler = new Handler(this);
+        mHandler.sendEmptyMessageDelayed(1991, 1000);
     }
 
     @Override
@@ -61,22 +60,22 @@ public class DebugZBarDecoder extends ZBarDecoder {
     }
 
     @Override
-    public void handleMessage(Message msg) {
-        super.handleMessage(msg);
+    public boolean handleMessage(Message msg) {
         if (msg.what == 1991) {
-            mCurThreadHandler.sendEmptyMessageDelayed(1991, 1000);
+            mHandler.sendEmptyMessageDelayed(1991, 1000);
             long decodeExpendTime = timeExpendList.size() == 0 ? -1 : (totalTimeExpend / timeExpendList.size());
             mZBarDebugListener.ZBarDebug(FPS, decodeExpendTime);
             FPS = 0;
         }
+        return super.handleMessage(msg);
     }
 
     @Override
     public void detach() {
         super.detach();
-        if (mCurThreadHandler != null) {
-            mCurThreadHandler.clear();
-            mCurThreadHandler = null;
+        if (mHandler != null) {
+            mHandler.removeCallbacksAndMessages(null);
+            mHandler = null;
         }
     }
 

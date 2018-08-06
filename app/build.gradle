@@ -7,16 +7,16 @@ android {
         applicationId "cn.simonlee.demo.xcodescanner"
         minSdkVersion 14
         targetSdkVersion 27
-        versionCode 16
-        versionName "1.1.6"
-//         XCodeScanner默认编译所有平台so库，开发者可自行选择保留以减小APK体积
-//        ndk {
-//            abiFilters "armeabi","armeabi-v7a"
-//        }
+        versionCode 17
+        versionName "1.1.7"
+        ndk {
+//          此处可指定ABI，显著减小APK体积。不指定则默认编译所有平台so库
+            abiFilters "armeabi-v7a"
+        }
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -25,7 +25,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:27.1.1'
-    compileOnly 'com.android.support.constraint:constraint-layout:1.1.0'
+    compileOnly 'com.android.support.constraint:constraint-layout:1.1.2'
 
     api project(':zbar')
 //    implementation 'cn.simonlee.xcodescanner:zbar:1.1.5'

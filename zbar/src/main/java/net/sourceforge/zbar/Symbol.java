@@ -38,7 +38,6 @@ public class Symbol {
      * Symbol detected but not decoded.
      */
     public static final int PARTIAL = 1;
-
     /**
      * EAN-8.
      */

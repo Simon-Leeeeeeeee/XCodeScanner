@@ -7,7 +7,9 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 27
-        consumerProguardFiles 'consumer-proguard-rules.pro'
+        consumerProguardFiles 'proguard-rules.pro'
+        versionCode 17
+        versionName "1.1.7"
     }
 
     sourceSets {
@@ -40,7 +42,7 @@ task ndkBuild(type: Exec) {
 
 dependencies {
     implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.2'
 }
 
-apply from: 'bintray.gradle'
+//apply from: 'bintray.gradle'
