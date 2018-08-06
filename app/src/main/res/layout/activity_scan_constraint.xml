@@ -75,6 +75,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/flash_open"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@id/scannerframe"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent" />

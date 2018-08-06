@@ -32,6 +32,7 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
     protected GraphicDecoder mGraphicDecoder;
 
     protected String TAG = "XCodeScanner";
+    private Button mButton_Flash;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -52,20 +53,19 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
 
         mTextureView = findViewById(R.id.textureview);
         mScannerFrameView = findViewById(R.id.scannerframe);
-
-        findViewById(R.id.btn_flash).setOnClickListener(this);
+        mButton_Flash = findViewById(R.id.btn_flash);
+        mButton_Flash.setOnClickListener(this);
 
         /*
         * 注意，SDK21的设备是可以使用NewCameraScanner的，但是可能存在对新API支持不够的情况，比如红米Note3（双网通Android5.0.2）
         * 开发者可自行配置使用规则，比如针对某设备型号过滤，或者针对某SDK版本过滤
         * */
         if (newAPI && Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-            mCameraScanner = NewCameraScanner.getInstance();
+            mCameraScanner = new NewCameraScanner(this);
         } else {
-            mCameraScanner = OldCameraScanner.getInstance();
+            mCameraScanner = new OldCameraScanner(this);
         }
 
-        mCameraScanner.setCameraListener(this);
         mTextureView.setSurfaceTextureListener(this);
     }
 
@@ -75,7 +75,7 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
         if (mTextureView.isAvailable()) {
             //部分机型转到后台不会走onSurfaceTextureDestroyed()，因此isAvailable()一直为true，转到前台后不会再调用onSurfaceTextureAvailable()
             //因此需要手动开启相机
-            mCameraScanner.setSurfaceTexture(mTextureView.getSurfaceTexture());
+            mCameraScanner.setPreviewTexture(mTextureView.getSurfaceTexture());
             mCameraScanner.setPreviewSize(mTextureView.getWidth(), mTextureView.getHeight());
             mCameraScanner.openCamera(this.getApplicationContext());
         }
@@ -104,9 +104,9 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         Log.e(TAG, getClass().getName() + ".onSurfaceTextureAvailable() width = " + width + " , height = " + height);
-        mCameraScanner.setSurfaceTexture(surface);
+        mCameraScanner.setPreviewTexture(surface);
         mCameraScanner.setPreviewSize(width, height);
-        mCameraScanner.openCamera(this.getApplicationContext());
+        mCameraScanner.openCamera(this);
     }
 
     @Override
@@ -155,6 +155,16 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
     @Override
     public void cameraDisconnected() {
         ToastHelper.showToast(this, "断开了连接", ToastHelper.LENGTH_SHORT);
+    }
+
+    @Override
+    public void cameraBrightnessChanged(int brightness) {
+        if (brightness <= 40) {
+            mButton_Flash.setVisibility(View.VISIBLE);
+        } else if (!mCameraScanner.isFlashOpened()) {
+            mButton_Flash.setVisibility(View.GONE);
+        }
+        Log.e(TAG, getClass().getName() + ".cameraBrightnessChanged() brightness = " + brightness);
     }
 
     int mCount = 0;

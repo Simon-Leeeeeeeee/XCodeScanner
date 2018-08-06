@@ -30,6 +30,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 扫码核心类，新API（SDK21及以上）
+ * 完成相机预览、图像帧数据采集、闪光灯控制等功能
+ *
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
@@ -38,75 +41,144 @@ import java.util.concurrent.TimeUnit;
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class NewCameraScanner implements CameraScanner, Handler.Callback {
 
-    private final int HANDLER_SUCCESS_OPEN = 70001;
-    private final int HANDLER_FAIL_CLOSED = 80001;
-    private final int HANDLER_FAIL_OPEN = 80002;
-    private final int HANDLER_FAIL_CREATSESSION = 80003;
-    private final int HANDLER_FAIL_CONFIG = 80004;
-    private final int HANDLER_FAIL_DISCONNECTED = 80005;
-    private final int HANDLER_FAIL_NO_PERMISSION = 80006;
+    /**
+     * 相机ID
+     */
+    private String mCameraId;
 
-    private SurfaceTexture mSurfaceTexture;
-
-    private GraphicDecoder mGraphicDecoder;//图像解码器
-
-    private final String TAG = "XCodeScanner";
-
-    private int mOrientation;//设备方向 0 朝上 1朝左 2朝下 3朝右
-
-    private Size mSurfaceSize;//图像帧的尺寸
-    private Size mPreviewSize;//预览View的尺寸
-    private RectF mRectClipRatio;//扫码框区域相对于图像帧所占比例，且已根据mOrientation做校正
-
-    private Handler mCurThreadHandler;//实例化线程对应的handler
-    private Handler mBackgroundHandler;//子线程对应的handler
-    private HandlerThread mBackgroundThread;//子线程
-
-    private CameraListener mCameraListener;//相机设备回调
-
+    /**
+     * 相机设备
+     */
     private CameraDevice mCameraDevice;
+
+    /**
+     * 相机管理
+     */
     private CameraManager mCameraManager;
+
+    /**
+     * 相机会话
+     */
     private CameraCaptureSession mCaptureSession;
+
+    /**
+     * 预览Builder
+     */
     private CaptureRequest.Builder mPreviewBuilder;
 
-    private String mCameraId;//相机ID
-
-    private TextureReader mTextureReader;//用于获取帧数据
-
+    /**
+     * 相机状态回调
+     */
     private CameraDevice.StateCallback mDeviceStateCallback;
+
+    /**
+     * 会话状态回调
+     */
     private CameraCaptureSession.StateCallback mSessionStateCallback;
+
+    /**
+     * 预览的SurfaceTexture
+     */
+    private SurfaceTexture mPreviewTexture;
+
+    /**
+     * 条码&二维码图像解析工具
+     */
+    private GraphicDecoder mGraphicDecoder;
+
+    /**
+     * 设备方向 0 朝上 1朝左 2朝下 3朝右
+     */
+    private int mOrientation;
+
+    /**
+     * 图像帧的尺寸
+     */
+    private Size mSurfaceSize;
+
+    /**
+     * 预览View的尺寸
+     */
+    private Size mPreviewSize;
+
+    /**
+     * 扫码框区域相对于图像帧所占比例，且已根据mOrientation做校正
+     */
+    private RectF mClipRectRatio;
+
+    /**
+     * 实例化线程对应的handler
+     */
+    private Handler mCurThreadHandler;
+
+    /**
+     * 子线程对应的handler
+     */
+    private Handler mBackgroundHandler;
+
+    /**
+     * 子线程
+     */
+    private HandlerThread mBackgroundThread;
+
+    /**
+     * 相机事件监听回调
+     */
+    private CameraListener mCameraListener;
+
+    /**
+     * 相机锁，操作相机前都必须申请信号量，防止多个实例同时操作相机引发异常
+     */
+    private Semaphore mCameraLock;
+
+    /**
+     * 用于获取帧数据
+     */
+    private TextureReader mTextureReader;
+
+    /**
+     * 图像帧回调
+     */
     private TextureReader.OnImageAvailableListener mOnImageAvailableListener;
 
-    private final Semaphore mCameraLock;
+    /**
+     * 启用亮度回馈标志
+     */
+    private boolean isBrightnessFeedbackEnabled;
 
-    private volatile static NewCameraScanner instance;
+    /**
+     * 亮度值计数（每20帧重置一次）
+     */
+    private int mBrightnessCount;
 
-    public static NewCameraScanner getInstance() {
-        if (instance == null) {
-            synchronized (NewCameraScanner.class) {
-                if (instance == null) {
-                    instance = new NewCameraScanner();
-                }
-            }
-        }
-        return instance;
-    }
+    /**
+     * 累计亮度值（每20帧重置一次）
+     */
+    private int mBrightnessTotal;
 
-    private NewCameraScanner() {
-        mCameraLock = new Semaphore(1);
+    public NewCameraScanner(CameraListener cameraListener) {
+        this.mCameraListener = cameraListener;
+        this.mCurThreadHandler = new Handler(this);
+        this.mBackgroundThread = new HandlerThread("NewCameraScanner");
+        mBackgroundThread.start();
+        this.mBackgroundHandler = new Handler(mBackgroundThread.getLooper(), null);
+        this.mCameraLock = CameraLock.getInstance();
+        this.isBrightnessFeedbackEnabled = true;
     }
 
     @Override
     public void openCamera(Context context) {
         Log.d(TAG, getClass().getName() + ".openCamera()");
         final Context finalContext = context.getApplicationContext();
-        startBackgroundThread();
         takeOrientation(finalContext);//获取设备方向
         mBackgroundHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (!checkCameraPermission(finalContext)) {//权限不足
-                    mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_NO_PERMISSION));
+                if (ContextCompat.checkSelfPermission(finalContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    //权限不足
+                    if (mCurThreadHandler != null) {
+                        mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_NO_PERMISSION));
+                    }
                     return;
                 }
                 if (mCameraManager == null) {
@@ -128,109 +200,12 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                     mCameraManager.openCamera(mCameraId, getDeviceStateCallback(), mBackgroundHandler);//开启相机
                 } catch (Exception e) {//开启相机失败
                     Log.e(TAG, getClass().getName() + ".openCamera() : " + e);
-                    mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_OPEN));
+                    if (mCurThreadHandler != null) {
+                        mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_OPEN));
+                    }
                 }
             }
         });
-    }
-
-    /**
-     * 启动子线程
-     */
-    private void startBackgroundThread() {
-        if (mCurThreadHandler == null) {
-            mCurThreadHandler = new Handler(this);
-        }
-        if (mBackgroundThread == null) {
-            mBackgroundThread = new HandlerThread("NewCameraScanner");
-            mBackgroundThread.start();
-            mBackgroundHandler = new Handler(mBackgroundThread.getLooper(), null);
-        }
-    }
-
-    /**
-     * 结束子线程
-     */
-    private void stopBackgroundThread() {
-        if (mCurThreadHandler != null) {
-            mCurThreadHandler.removeCallbacksAndMessages(null);
-            mCurThreadHandler = null;
-        }
-        if (mBackgroundThread != null) {
-            mBackgroundThread.quitSafely();
-            try {
-                mBackgroundThread.join();
-                mBackgroundThread = null;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        if (mBackgroundHandler != null) {
-            mBackgroundHandler.removeCallbacksAndMessages(null);
-            mBackgroundHandler = null;
-        }
-    }
-
-    /**
-     * 获取window方向
-     */
-    private void takeOrientation(Context context) {
-        //TODO
-//        mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-
-        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        if (windowManager != null) {
-            mOrientation = windowManager.getDefaultDisplay().getRotation();
-        }
-        Log.d(TAG, getClass().getName() + ".takeOrientation() mOrientation = " + mOrientation);
-    }
-
-    /**
-     * 检查相机权限
-     */
-    private boolean checkCameraPermission(Context context) {
-        return ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    /**
-     * 获取后置摄像头配置及cameraId
-     */
-    private StreamConfigurationMap getBackCameraStreamConfigurationMap() throws NullPointerException, CameraAccessException {
-        for (String cameraId : mCameraManager.getCameraIdList()) {//查询CameraID
-            CameraCharacteristics cameraCharacteristics = mCameraManager.getCameraCharacteristics(cameraId);
-            Integer facing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
-            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                mCameraId = cameraId;
-                return cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            }
-        }
-        throw new NullPointerException("No Back Camera Stream Configuration Map found!");
-    }
-
-    /**
-     * 初始化图像帧的尺寸大小
-     */
-    private void initSurfaceSize(Size[] sizeArray, int previewWidth, int previewHeight) {
-        if (mOrientation == Surface.ROTATION_0 || mOrientation == Surface.ROTATION_180) {
-            mSurfaceSize = getBigEnoughSize(sizeArray, previewHeight, previewWidth);
-        } else {
-            mSurfaceSize = getBigEnoughSize(sizeArray, previewWidth, previewHeight);
-        }
-        mSurfaceTexture.setDefaultBufferSize(mSurfaceSize.getWidth(), mSurfaceSize.getHeight());
-        Log.d(TAG, getClass().getName() + ".initSurfaceSize() mSurfaceSize = " + mSurfaceSize.toString());
-    }
-
-    /**
-     * 初始化TextureReader
-     */
-    private void initTextureReader(Size[] outputSizes) {
-        if (mTextureReader == null) {
-            //像素过大会导致二维码解析失败！此处限制为1080P，即2073600像素大小
-            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, 2073600L);
-            mTextureReader = new TextureReader(size.getWidth(), size.getHeight());
-            mTextureReader.setOnImageAvailableListener(getImageAvailableListener());
-            Log.d(TAG, getClass().getName() + ".initTextureReader() mTextureReader = " + size.toString());
-        }
     }
 
     @Override
@@ -291,13 +266,40 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
     }
 
     @Override
+    public boolean isFlashOpened() {
+        if (mCaptureSession != null && mPreviewBuilder != null) {
+            mPreviewBuilder.get(CaptureRequest.FLASH_MODE);
+            Integer flashMode = mPreviewBuilder.get(CaptureRequest.FLASH_MODE);
+            if (flashMode != null)
+                return CaptureRequest.FLASH_MODE_OFF != flashMode;
+        }
+        return false;
+    }
+
+    @Override
     public void detach() {
         Log.d(TAG, getClass().getName() + ".detach()");
         closeCamera();
-        stopBackgroundThread();
-        if (mSurfaceTexture != null) {
-            mSurfaceTexture.release();
-            mSurfaceTexture = null;
+        if (mCurThreadHandler != null) {
+            mCurThreadHandler.removeCallbacksAndMessages(null);
+            mCurThreadHandler = null;
+        }
+        if (mBackgroundHandler != null) {
+            mBackgroundHandler.removeCallbacksAndMessages(null);
+            mBackgroundHandler = null;
+        }
+        if (mBackgroundThread != null) {
+            mBackgroundThread.quitSafely();
+            try {
+                mBackgroundThread.join();
+                mBackgroundThread = null;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        if (mPreviewTexture != null) {
+            mPreviewTexture.release();
+            mPreviewTexture = null;
         }
         if (mGraphicDecoder != null) {
             mGraphicDecoder.detach();
@@ -307,15 +309,11 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
             mTextureReader.close();
             mTextureReader = null;
         }
-        mCameraId = null;
-        mSurfaceSize = null;
-        mPreviewSize = null;
         mCameraManager = null;
-        mRectClipRatio = null;
         mPreviewBuilder = null;
+        mCameraListener = null;
         mDeviceStateCallback = null;
         mSessionStateCallback = null;
-        mCameraListener = null;
         mOnImageAvailableListener = null;
     }
 
@@ -326,8 +324,8 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
     }
 
     @Override
-    public void setSurfaceTexture(SurfaceTexture surfaceTexture) {
-        this.mSurfaceTexture = surfaceTexture;
+    public void setPreviewTexture(SurfaceTexture surfaceTexture) {
+        this.mPreviewTexture = surfaceTexture;
     }
 
     @Override
@@ -341,14 +339,20 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
     }
 
     @Override
+    public void enableBrightnessFeedback(boolean enable) {
+        this.isBrightnessFeedbackEnabled = enable;
+        this.mBrightnessTotal = mBrightnessCount = 0;
+    }
+
+    @Override
     public void setFrameRect(int frameLeft, int frameTop, int frameRight, int frameBottom) {
         Log.d(TAG, getClass().getName() + ".setFrameRect() mOrientation = " + mOrientation + " frameRect = " + frameLeft + "-" + frameTop
                 + "-" + frameRight + "-" + frameBottom);
-        if (mRectClipRatio == null) {
-            mRectClipRatio = new RectF();
+        if (mClipRectRatio == null) {
+            mClipRectRatio = new RectF();
         }
         if (frameLeft >= frameRight || frameTop >= frameBottom) {
-            mRectClipRatio.setEmpty();
+            mClipRectRatio.setEmpty();
             return;
         }
         int previewWidth = mPreviewSize.getWidth();
@@ -366,29 +370,81 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
         } else {//图像帧的高超出了View的底边，以宽计算缩放比例
             ratio = 1F * surfaceWidth / previewWidth;
         }
-        float leftRatio = calculateRatio(ratio * frameLeft / surfaceWidth);//计算扫描框的左边在图像帧中所处的位置
-        float rightRatio = calculateRatio(ratio * frameRight / surfaceWidth);//计算扫描框的右边在图像帧中所处的位置
-        float topRatio = calculateRatio(ratio * frameTop / surfaceHeight);//计算扫描框的顶边在图像帧中所处的位置
-        float bottomRatio = calculateRatio(ratio * frameBottom / surfaceHeight);//计算扫描框的底边在图像帧中所处的位置
+        float leftRatio = Math.max(0, Math.min(1, ratio * frameLeft / surfaceWidth));//计算扫描框的左边在图像帧中所处的位置
+        float rightRatio = Math.max(0, Math.min(1, ratio * frameRight / surfaceWidth));//计算扫描框的右边在图像帧中所处的位置
+        float topRatio = Math.max(0, Math.min(1, ratio * frameTop / surfaceHeight));//计算扫描框的顶边在图像帧中所处的位置
+        float bottomRatio = Math.max(0, Math.min(1, ratio * frameBottom / surfaceHeight));//计算扫描框的底边在图像帧中所处的位置
         switch (mOrientation) {//根据旋转角度对位置进行校正
             case Surface.ROTATION_0: {
-                mRectClipRatio.set(topRatio, 1 - rightRatio, bottomRatio, 1 - leftRatio);
+                mClipRectRatio.set(topRatio, 1 - rightRatio, bottomRatio, 1 - leftRatio);
                 break;
             }
             case Surface.ROTATION_90: {
-                mRectClipRatio.set(leftRatio, topRatio, rightRatio, bottomRatio);
+                mClipRectRatio.set(leftRatio, topRatio, rightRatio, bottomRatio);
                 break;
             }
             case Surface.ROTATION_180: {
-                mRectClipRatio.set(1 - bottomRatio, leftRatio, 1 - topRatio, rightRatio);
+                mClipRectRatio.set(1 - bottomRatio, leftRatio, 1 - topRatio, rightRatio);
                 break;
             }
             case Surface.ROTATION_270: {
-                mRectClipRatio.set(1 - rightRatio, 1 - bottomRatio, 1 - leftRatio, 1 - topRatio);
+                mClipRectRatio.set(1 - rightRatio, 1 - bottomRatio, 1 - leftRatio, 1 - topRatio);
                 break;
             }
         }
-        Log.d(TAG, getClass().getName() + ".setFrameRect() mRectClipRatio = " + mRectClipRatio);
+        Log.d(TAG, getClass().getName() + ".setFrameRect() mClipRectRatio = " + mClipRectRatio);
+    }
+
+    /**
+     * 获取window方向
+     */
+    private void takeOrientation(Context context) {
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        if (windowManager != null) {
+            mOrientation = windowManager.getDefaultDisplay().getRotation();
+        }
+        Log.d(TAG, getClass().getName() + ".takeOrientation() mOrientation = " + mOrientation);
+    }
+
+    /**
+     * 获取后置摄像头配置及cameraId
+     */
+    private StreamConfigurationMap getBackCameraStreamConfigurationMap() throws NullPointerException, CameraAccessException {
+        for (String cameraId : mCameraManager.getCameraIdList()) {//查询CameraID
+            CameraCharacteristics cameraCharacteristics = mCameraManager.getCameraCharacteristics(cameraId);
+            Integer facing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                mCameraId = cameraId;
+                return cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            }
+        }
+        throw new NullPointerException("No Back Camera Stream Configuration Map found!");
+    }
+
+    /**
+     * 初始化图像帧的尺寸大小
+     */
+    private void initSurfaceSize(Size[] sizeArray, int previewWidth, int previewHeight) {
+        if (mOrientation == Surface.ROTATION_0 || mOrientation == Surface.ROTATION_180) {
+            mSurfaceSize = getBigEnoughSize(sizeArray, previewHeight, previewWidth);
+        } else {
+            mSurfaceSize = getBigEnoughSize(sizeArray, previewWidth, previewHeight);
+        }
+        mPreviewTexture.setDefaultBufferSize(mSurfaceSize.getWidth(), mSurfaceSize.getHeight());
+        Log.d(TAG, getClass().getName() + ".initSurfaceSize() mSurfaceSize = " + mSurfaceSize.toString());
+    }
+
+    /**
+     * 初始化TextureReader
+     */
+    private void initTextureReader(Size[] outputSizes) {
+        if (mTextureReader == null) {
+            //像素过大会导致二维码解析失败！此处限制为1080P，即2073600像素大小
+            Size size = getMaxSuitSize(outputSizes, mSurfaceSize, 2073600L);
+            mTextureReader = new TextureReader(size.getWidth(), size.getHeight());
+            mTextureReader.setOnImageAvailableListener(getImageAvailableListener());
+            Log.d(TAG, getClass().getName() + ".initTextureReader() mTextureReader = " + size.toString());
+        }
     }
 
     private CameraDevice.StateCallback getDeviceStateCallback() {
@@ -405,14 +461,18 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                 public void onDisconnected(@NonNull CameraDevice camera) {//未能连接到摄像头，提示是否被占用
                     Log.e(TAG, getClass().getName() + ".onDisconnected()");
                     mCameraLock.release();
-                    mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_DISCONNECTED));
+                    if (mCurThreadHandler != null) {
+                        mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_DISCONNECTED));
+                    }
                 }
 
                 @Override
                 public void onError(@NonNull CameraDevice camera, int error) {//出错
                     Log.e(TAG, getClass().getName() + ".onError() error = " + error);
                     mCameraLock.release();
-                    mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_OPEN));
+                    if (mCurThreadHandler != null) {
+                        mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_OPEN));
+                    }
                 }
             };
         }
@@ -423,7 +483,7 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
         try {
             mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             List<Surface> surfaceList = new ArrayList<>();
-            Surface surface = new Surface(mSurfaceTexture);
+            Surface surface = new Surface(mPreviewTexture);
             mPreviewBuilder.addTarget(surface);//添加预览的Surface
             surfaceList.add(surface);
             if (mTextureReader != null) {
@@ -435,7 +495,9 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
         } catch (CameraAccessException e) {//创建会话失败
             mCameraLock.release();
             Log.e(TAG, getClass().getName() + ".createCaptureSession() : " + e);
-            mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CREATSESSION));
+            if (mCurThreadHandler != null) {
+                mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CREATSESSION));
+            }
         }
     }
 
@@ -450,10 +512,14 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                         mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);//自动对焦
                         mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);//自动曝光
                         mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);//无限次的重复获取图像
-                        mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_SUCCESS_OPEN));
+                        if (mCurThreadHandler != null) {
+                            mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_SUCCESS_OPEN));
+                        }
                     } catch (CameraAccessException e) {
                         Log.e(TAG, getClass().getName() + ".onConfigured() : " + e);
-                        mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CONFIG));
+                        if (mCurThreadHandler != null) {
+                            mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CONFIG));
+                        }
                     }
                     mCameraLock.release();
                 }
@@ -462,7 +528,9 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                 public void onConfigureFailed(@NonNull CameraCaptureSession session) {
                     Log.d(TAG, getClass().getName() + ".onConfigureFailed()");
                     mCameraLock.release();
-                    mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CONFIG));
+                    if (mCurThreadHandler != null) {
+                        mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CONFIG));
+                    }
                 }
             };
         }
@@ -476,24 +544,27 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                 @Override
                 public void onFrameAvailable(byte[] frameData, int width, int height) {
                     if (mGraphicDecoder != null) {
-                        if (mRectClipRatio == null || mRectClipRatio.isEmpty()) {//当未设置图像识别剪裁时，应以View的大小进行设置，防止未显示的图像被误识别
+                        if (mClipRectRatio == null || mClipRectRatio.isEmpty()) {//当未设置图像识别剪裁时，应以View的大小进行设置，防止未显示的图像被误识别
                             setFrameRect(0, 0, mPreviewSize.getWidth(), mPreviewSize.getHeight());
                         }
-                        mGraphicDecoder.decode(frameData, width, height, mRectClipRatio, 0);
+                        if (isBrightnessFeedbackEnabled && mCameraListener != null) {//启用亮度回馈
+                            //采集步长，总共采集900个像素点
+                            int step = Math.max(1, width * height / 900);
+                            for (int index = 0; index < width * height - 1; index += step) {
+                                mBrightnessTotal += frameData[index] & 0xff - 16;
+                                mBrightnessCount++;
+                            }
+                            //累计采集达到20帧，进行回调，并重置数据
+                            if (mBrightnessCount >= 900 * 20 && mCurThreadHandler != null) {
+                                mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_CHANGED_BRIGHTNESS));
+                            }
+                        }
+                        mGraphicDecoder.decode(frameData, width, height, mClipRectRatio, 0);
                     }
                 }
             };
         }
         return mOnImageAvailableListener;
-    }
-
-    private float calculateRatio(float ratio) {
-        if (ratio > 1) {
-            return 1;
-        } else if (ratio < 0) {
-            return 0;
-        }
-        return ratio;
     }
 
     /**
@@ -560,6 +631,15 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
             }
             case HANDLER_FAIL_CLOSED: {//已被关闭
                 closeCamera();
+                break;
+            }
+            case HANDLER_CHANGED_BRIGHTNESS: {//亮度变化
+                if (mCameraListener != null) {
+                    if (mBrightnessTotal != 0 && mBrightnessCount != 0) {
+                        mCameraListener.cameraBrightnessChanged(mBrightnessTotal / mBrightnessCount);
+                    }
+                }
+                mBrightnessTotal = mBrightnessCount = 0;
                 break;
             }
             case HANDLER_FAIL_OPEN://开启失败

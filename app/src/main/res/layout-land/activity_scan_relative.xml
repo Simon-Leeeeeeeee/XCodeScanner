@@ -68,6 +68,7 @@
             android:layout_height="wrap_content"
             android:layout_alignBottom="@id/scannerframe"
             android:layout_centerHorizontal="true"
-            android:text="@string/flash_open" />
+            android:text="@string/flash_open"
+            android:visibility="gone" />
     </cn.simonlee.xcodescanner.view.MaskRelativeLayout>
 </LinearLayout>
