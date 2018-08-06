@@ -25,6 +25,9 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:27.1.1'
+
+    implementation 'cn.simonlee.widget:swipeback:1.0.10'
+
     compileOnly 'com.android.support.constraint:constraint-layout:1.1.2'
 
     api project(':zbar')

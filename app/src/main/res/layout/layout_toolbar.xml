@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@id/base_toolbar"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:background="@color/colorPrimary"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:theme="@style/ToolbarTheme"
+    app:contentInsetLeft="15dp"
+    app:contentInsetStart="15dp"
+    app:contentInsetStartWithNavigation="0dp"
+    app:navigationIcon="@drawable/ic_navigate_back_white"
+    app:popupTheme="@style/ToolbarOverflowMenuTheme"
+    app:subtitleTextAppearance="@style/ToolbarSubtitleTextTheme"
+    app:title="@string/app_name"
+    app:titleMargin="0dp"
+    app:titleTextAppearance="@style/ToolbarTitleTextTheme">
+
+</android.support.v7.widget.Toolbar>

@@ -9,8 +9,8 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -23,7 +23,7 @@ import cn.simonlee.xcodescanner.core.ZBarDecoder;
  * @e-mail jmlixiaomeng@163.com
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener, GraphicDecoder.DecodeListener {
+public class MainActivity extends BaseActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener, GraphicDecoder.DecodeListener {
 
     private final int MODE_RELEASE = 0;
     private final int MODE_DEBUG = 1;
@@ -34,9 +34,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private GraphicDecoder mGraphicDecoder;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Toolbar toolbar = getToolbar();
+        if (toolbar != null) {
+            toolbar.setNavigationIcon(null);
+        }
 
         findViewById(R.id.btn_local).setOnClickListener(this);
         findViewById(R.id.btn_scan).setOnClickListener(this);
@@ -137,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startScan(requestCode);
         } else {
-            ToastHelper.showToast(this,"请开启相机权限", ToastHelper.LENGTH_SHORT);
+            ToastHelper.showToast(this, "请开启相机权限", ToastHelper.LENGTH_SHORT);
         }
     }
 
@@ -152,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void startScan(int mode) {
         if (newAPI && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            ToastHelper.showToast(this,"新API需要Android5.0及以上", ToastHelper.LENGTH_SHORT);
+            ToastHelper.showToast(this, "新API需要Android5.0及以上", ToastHelper.LENGTH_SHORT);
             return;
         }
         Intent intent = new Intent(this, mode == MODE_DEBUG ? DebugScanActivity.class : ScanActivity.class);

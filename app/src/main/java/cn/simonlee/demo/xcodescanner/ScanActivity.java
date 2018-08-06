@@ -4,7 +4,7 @@ import android.content.Intent;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
@@ -23,7 +23,7 @@ import cn.simonlee.xcodescanner.view.ScannerFrameView;
  * @e-mail jmlixiaomeng@163.com
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
-public class ScanActivity extends AppCompatActivity implements CameraScanner.CameraListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener, View.OnClickListener {
+public class ScanActivity extends BaseActivity implements CameraScanner.CameraListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener, View.OnClickListener {
 
     private AdjustTextureView mTextureView;
     private ScannerFrameView mScannerFrameView;
@@ -37,11 +37,18 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, getClass().getName() + ".onCreate()");
         super.onCreate(savedInstanceState);
+
         Intent intent = getIntent();
         boolean newAPI = intent.getBooleanExtra("newAPI", false);
         boolean constraintLayout = intent.getBooleanExtra("constraintLayout", false);
 
         setContentView(constraintLayout ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
+
+        Toolbar toolbar = getToolbar();
+        if (toolbar != null) {
+            toolbar.setTitle(R.string.scan);
+            toolbar.setNavigationOnClickListener(this);
+        }
 
         mTextureView = findViewById(R.id.textureview);
         mScannerFrameView = findViewById(R.id.scannerframe);
@@ -175,15 +182,22 @@ public class ScanActivity extends AppCompatActivity implements CameraScanner.Cam
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.btn_flash) {
-            if (v.isSelected()) {
-                ((Button) v).setText(R.string.flash_open);
-                v.setSelected(false);
-                mCameraScanner.closeFlash();
-            } else {
-                ((Button) v).setText(R.string.flash_close);
-                v.setSelected(true);
-                mCameraScanner.openFlash();
+        switch (v.getId()) {
+            case R.id.base_toolbar_navigation: {
+                onBackPressed();
+                break;
+            }
+            case R.id.btn_flash: {
+                if (v.isSelected()) {
+                    ((Button) v).setText(R.string.flash_open);
+                    v.setSelected(false);
+                    mCameraScanner.closeFlash();
+                } else {
+                    ((Button) v).setText(R.string.flash_close);
+                    v.setSelected(true);
+                    mCameraScanner.openFlash();
+                }
+                break;
             }
         }
     }

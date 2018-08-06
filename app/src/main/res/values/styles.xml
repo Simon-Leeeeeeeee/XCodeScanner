@@ -1,15 +1,99 @@
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+    <!-- 没有ActionBar -->
+    <style name="BaseActivityTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
+        <!--状态栏颜色-->
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <!--光标、进度条等颜色-->
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:actionModeBackground">@color/colorPrimary</item>
+        <!--ActionMode配置-->
+        <item name="android:actionBarSize">48dp</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">@color/colorWindowBackground</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimation</item>
     </style>
 
-    <style name="BlackAppTheme" parent="AppTheme">
-        <item name="android:windowBackground">@color/black</item>
+    <style name="WindowAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/activity_open_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/activity_open_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/activity_close_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/activity_close_exit</item>
+    </style>
+
+    <!-- 启动页主题 -->
+    <style name="SplashActivityTheme" parent="BaseActivityTheme">
+        <item name="android:windowBackground">@drawable/bg_splash</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
+    <!-- window透明主题 -->
+    <style name="BaseActivityTheme.TransparentWindow" parent="BaseActivityTheme">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+
+    <!--Toolbar样式-->
+    <style name="ToolbarTheme">
+        <item name="titleMargin">0dp</item>
+        <item name="android:paddingLeft">0dp</item>
+        <item name="android:paddingRight">0dp</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <!--菜单文字颜色-->
+        <item name="actionMenuTextColor">@color/white</item>
+        <!--溢出菜单图标颜色-->
+        <item name="android:textColorSecondary">@color/white</item>
+        <item name="toolbarNavigationButtonStyle">@style/ToolbarNavigationButtonTheme</item>
+        <item name="actionButtonStyle">@style/ToolbarActionButtonTheme</item>
+        <item name="actionMenuTextAppearance">@style/ToolbarMenuTextTheme</item>
+        <item name="actionOverflowButtonStyle">@style/ToolbarActionOverflowButtonTheme</item>
+    </style>
+    <!--Toolbar返回键样式-->
+    <style name="ToolbarNavigationButtonTheme" parent="@style/Widget.AppCompat.Toolbar.Button.Navigation">
+        <item name="android:id">@id/base_toolbar_navigation</item>
+        <item name="android:minWidth">40dp</item>
+        <item name="android:scaleType">centerInside</item>
+    </style>
+    <!--Toolbar标题样式-->
+    <style name="ToolbarTitleTextTheme" parent="@style/TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textSize">20dp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+    <!--Toolbar小标题样式-->
+    <style name="ToolbarSubtitleTextTheme" parent="@style/TextAppearance.Widget.AppCompat.Toolbar.Subtitle">
+        <item name="android:textSize">13dp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+    <!-- toolbar菜单文字 -->
+    <style name="ToolbarMenuTextTheme" parent="@style/TextAppearance.AppCompat.Menu">
+        <item name="android:textSize">19dp</item>
+    </style>
+    <!--Toolbar菜单键样式-->
+    <style name="ToolbarActionButtonTheme">
+        <item name="android:minHeight">?attr/actionBarSize</item>
+    </style>
+    <!--Toolbar菜单溢出键样式-->
+    <style name="ToolbarActionOverflowButtonTheme" parent="@android:style/Widget.DeviceDefault.ActionButton.Overflow">
+        <item name="android:minHeight">?attr/actionBarSize</item>
+        <!--长按文字说明-->
+        <item name="android:contentDescription">@null</item>
+    </style>
+
+    <!--Toolbar弹出菜单样式-->
+    <style name="ToolbarOverflowMenuTheme" parent="@style/Widget.AppCompat.PopupMenu.Overflow">
+        <!-- 是否覆盖锚点，默认为true，即盖住Toolbar-->
+        <item name="overlapAnchor">false</item>
+        <!-- 弹出层分割线 -->
+        <item name="android:dropDownListViewStyle">@style/ToolbarPopupMenuListTheme</item>
+        <!-- 弹出层背景颜色 -->
+        <item name="android:colorBackground">@color/colorPrimaryLight</item>
+    </style>
+    <!--Toolbar弹出菜单分割线样式-->
+    <style name="ToolbarPopupMenuListTheme" parent="@android:style/Widget.Holo.ListView.DropDown">
+        <item name="android:divider">@color/colorPrimary</item><!--menu列表项分割线的颜色-->
+        <item name="android:dividerHeight">1px</item><!--menu列表项分割线的高度-->
+        <item name="android:scaleType">center</item>
     </style>
 
 </resources>

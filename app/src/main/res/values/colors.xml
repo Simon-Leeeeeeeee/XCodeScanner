@@ -1,16 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <color name="transparent">#00000000</color>
-    <color name="white_translucent">#EEFFFFFF</color>
-
-    <color name="white">#FFFFFF</color>
-    <color name="black">#000000</color>
-    <color name="gray2">#80898989</color>
-    <color name="gray">#AFAFAF</color>
-
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorPrimary">#225596</color>
+    <color name="colorPrimaryDark">#225596</color>
+    <color name="colorPrimaryLight">#4E77AB</color>
     <color name="colorAccent">#FF4081</color>
 
+    <color name="colorTransparent">#00000000</color>
+    <color name="colorWindowBackground">#F4F4F4</color>
+
+    <color name="transparent">#00000000</color>
+
+    <color name="white">#FFFFFF</color>
+
+    <color name="black">#000000</color>
+    <color name="black_light_lv1">#242424</color>
+    <color name="black_light_lv2">#353535</color>
+    <color name="black_light_lv3">#4A4A4A</color>
+    <color name="black_light_lv4">#4D4D4D</color>
+    <color name="black_light_lv6">#888888</color>
+    <color name="black_light_lv9">#BBBBBB</color>
+
+    <color name="red">#FF0000</color>
+
+    <color name="purple">#A020F0</color>
+
+    <color name="blue">#0076FF</color>
+    <color name="blue_light_lv1">#0076FF</color>
+    <color name="blue_light_lv2">#00B3FF</color>
+    <color name="blue_light_lv3">#36C0FA</color>
+    <color name="blue_light_lv4">#41C6FE</color>
+    <color name="blue_light_lv9">#C5DFFF</color>
+    <color name="blue_light_lv10">#ECF9FF</color>
+
+    <color name="gray">#888888</color>
+    <color name="gray_light_lv0">#8F8E94</color>
+    <color name="gray_light_lv1">#999999</color>
+    <color name="gray_light_lv2">#BABABA</color>
+    <color name="gray_light_lv3">#C6C6C6</color>
+    <color name="gray_light_lv4">#D3D3D3</color>
+    <color name="gray_light_lv5">#DADADA</color>
+    <color name="gray_light_lv6">#DDDDDD</color>
+    <color name="gray_light_lv7">#E5E5E5</color>
+    <color name="gray_light_lv8">#EBEBEB</color>
+    <color name="gray_light_lv9">#F3F3F3</color>
+
+    <color name="gray_translucent">#80888888</color>
+
+    <color name="yellow">#FFFF00</color>
+
+    <color name="green">#43D95D</color>
 </resources>

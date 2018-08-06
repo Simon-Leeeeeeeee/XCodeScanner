@@ -1,0 +1,8 @@
+<resources>
+
+    <style name="BaseActivityTheme.TransparentWindow" parent="BaseActivityTheme">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+
+</resources>

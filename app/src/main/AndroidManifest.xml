@@ -3,27 +3,32 @@
     package="cn.simonlee.demo.xcodescanner">
 
     <application
-        android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        android:theme="@style/BaseActivityTheme.TransparentWindow">
+        <activity
+            android:name=".SplashActivity"
+            android:theme="@style/SplashActivityTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
+            android:name=".MainActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/BaseActivityTheme"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".ScanActivity"
             android:launchMode="singleTask"
-            android:theme="@style/BlackAppTheme" />
+            android:screenOrientation="behind"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".DebugScanActivity"
             android:launchMode="singleTask"
-            android:theme="@style/BlackAppTheme" />
+            android:screenOrientation="behind"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

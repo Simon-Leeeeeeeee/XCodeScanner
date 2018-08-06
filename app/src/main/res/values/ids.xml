@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="base_toolbar" type="id" />
+    <item name="base_toolbar_navigation" type="id" />
+
+    <item name="resid_ignore" type="id" />
+</resources>
