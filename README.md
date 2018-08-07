@@ -34,9 +34,10 @@
 * 相机
     * 兼容`android.hardware.camera2`及`android.hardware.Camera`两版API。
     * 子线程开启camera，防止阻塞主线程造成界面跳转卡顿。
-    * 采用单例模式，防止出现多个实例同时操作相机设备引发异常。
+    * 采用单例信号量控制，防止多个实例同时操作相机引发异常。
+    * 加入亮度回馈，智能提示开启闪光灯。
     * 开放扫码框Rect设置接口，根据预览尺寸、图像帧尺寸、预览方向计算出扫码框在图像帧上的实际位置，以指定图像识别区域。
-    * 用`TextureReader`代替`ImageReader`，采用openGL绘制图像纹理，主要解决预览掉帧严重的问题，实时输出YUV格式图像。
+    * 用`TextureReader`代替`ImageReader`，采用openGL绘制图像纹理，主要解决`ImageReader`实时输出YUV格式图像时预览掉帧严重的问题。
 
 * 解码
     * 支持指定图像区域识别。
