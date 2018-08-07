@@ -6,6 +6,7 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -233,14 +234,9 @@ public class ScannerFrameView extends View {
     public static final int DIRECTION_RIGHT = 4;
 
     /**
-     * LayoutParams宽度
+     * 布局宽高
      */
-    private int mLayoutWidth;
-
-    /**
-     * LayoutParams高度
-     */
-    private int mLayoutHeight;
+    private int mLayoutWidth, mLayoutHeight;
 
     public ScannerFrameView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -259,9 +255,6 @@ public class ScannerFrameView extends View {
         this.isFrameLineVisible = typedArray.getBoolean(R.styleable.ScannerFrameView_frameLine_visible, true);
         this.mFrameLineWidth = typedArray.getDimensionPixelSize(R.styleable.ScannerFrameView_frameLine_width, (int) (density));
         this.mFrameLineColor = typedArray.getColor(R.styleable.ScannerFrameView_frameLine_color, Color.WHITE);
-
-        this.mLayoutWidth = typedArray.getLayoutDimension(R.styleable.ScannerFrameView_android_layout_width, 0);//-2wrap_content -1match_parent
-        this.mLayoutHeight = typedArray.getLayoutDimension(R.styleable.ScannerFrameView_android_layout_height, 0);//-2wrap_content -1match_parent
 
         this.mFrameWidthRatio = typedArray.getFloat(R.styleable.ScannerFrameView_frame_widthRatio, 0);
         if (mFrameWidthRatio > 1) {

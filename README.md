@@ -170,12 +170,14 @@
 
 ## 版本记录
 
-*  V1.1.7   `2018/XX/XX` 待发布
+*  V1.1.7   `2018/08/07`
    1. 修复armeabi架构无法识别二维码的问题。
    2. 增加亮度反馈，可实现提示开启闪光灯功能。
    3. `CameraScanner`取消单例模式，增加单例信号量`CameraLock`解决可能产生的相机并发操作。
    4. `GraphicDecoder`新增`setCodeTypes`接口指定识别的类型。
-   5. demo界面调整。
+   5. `MaskConstraintLayout`及`MaskRelativeLayout`新增`frame_viewid`属性，用于指定绘制阴影的View（便于开发者使用自定义的扫描框）。
+   6. demo界面调整。
+   7. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.7`。
 
 *  V1.1.6   `2018/05/08`
    1. `GraphicDecoder`增加本地图片识别接口。

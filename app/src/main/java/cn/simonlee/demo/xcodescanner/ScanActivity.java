@@ -15,7 +15,6 @@ import cn.simonlee.xcodescanner.core.GraphicDecoder;
 import cn.simonlee.xcodescanner.core.NewCameraScanner;
 import cn.simonlee.xcodescanner.core.OldCameraScanner;
 import cn.simonlee.xcodescanner.view.AdjustTextureView;
-import cn.simonlee.xcodescanner.view.ScannerFrameView;
 
 /**
  * 扫码页面
@@ -27,7 +26,7 @@ import cn.simonlee.xcodescanner.view.ScannerFrameView;
 public class ScanActivity extends BaseActivity implements CameraScanner.CameraListener, TextureView.SurfaceTextureListener, GraphicDecoder.DecodeListener, View.OnClickListener {
 
     private AdjustTextureView mTextureView;
-    private ScannerFrameView mScannerFrameView;
+    private View mScannerFrameView;
 
     private CameraScanner mCameraScanner;
     protected GraphicDecoder mGraphicDecoder;

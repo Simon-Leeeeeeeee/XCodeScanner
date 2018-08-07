@@ -12,6 +12,9 @@ import android.widget.RelativeLayout;
 import cn.simonlee.xcodescanner.R;
 
 /**
+ * 带阴影的RelativeLayout
+ * 可根据frame_viewid属性指定绘制阴影的View，若无指定，则默认指定为ScannerFrameView
+ *
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
@@ -30,6 +33,11 @@ public class MaskRelativeLayout extends RelativeLayout {
      */
     private Paint mPaint = new Paint();
 
+    /**
+     * 扫描框ViewId
+     */
+    private int mFrameViewId;
+
     public MaskRelativeLayout(Context context) {
         super(context);
     }
@@ -47,14 +55,21 @@ public class MaskRelativeLayout extends RelativeLayout {
     private void initView(Context context, AttributeSet attributeSet) {
         TypedArray typedArray = context.obtainStyledAttributes(attributeSet, R.styleable.MaskRelativeLayout);
         this.mFrameOutsideColor = typedArray.getColor(R.styleable.MaskRelativeLayout_frame_outsideColor, 0x60000000);
+        this.mFrameViewId = typedArray.getResourceId(R.styleable.MaskConstraintLayout_frame_viewid, 0);
         typedArray.recycle();
     }
 
     @Override
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
         boolean more = super.drawChild(canvas, child, drawingTime);
-        if (child != null && child instanceof ScannerFrameView && child.getVisibility() != GONE) {
-            drawFrameOutside(canvas, child.getLeft(), child.getTop(), child.getRight(), child.getBottom());
+        if (child != null && child.getVisibility() != View.GONE) {
+            if (mFrameViewId != 0) {
+                if (child.getId() == mFrameViewId) {
+                    drawFrameOutside(canvas, child.getLeft(), child.getTop(), child.getRight(), child.getBottom());
+                }
+            } else if (child instanceof ScannerFrameView) {
+                drawFrameOutside(canvas, child.getLeft(), child.getTop(), child.getRight(), child.getBottom());
+            }
         }
         return more;
     }

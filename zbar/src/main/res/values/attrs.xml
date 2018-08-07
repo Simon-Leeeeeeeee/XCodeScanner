@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="ScannerFrameView">
-        <!-- 扫描框的宽 -->
-        <attr name="android:layout_width" />
-        <!-- 扫描框的高 -->
-        <attr name="android:layout_height" />
         <!-- 扫描框宽占比(相对父容器的宽) -->
         <attr name="frame_widthRatio" format="float|reference" />
         <!-- 扫描框高占比(相对父容器的高) -->
@@ -54,14 +50,19 @@
     <declare-styleable name="MaskRelativeLayout">
         <!-- 扫描框外部颜色 -->
         <attr name="frame_outsideColor" />
-
+        <!-- 指定扫描框ID -->
+        <attr name="frame_viewid" />
     </declare-styleable>
 
     <declare-styleable name="MaskConstraintLayout">
         <!-- 扫描框外部颜色 -->
         <attr name="frame_outsideColor" />
+        <!-- 指定扫描框ID -->
+        <attr name="frame_viewid" />
     </declare-styleable>
 
     <!-- 扫描框外部颜色 -->
     <attr name="frame_outsideColor" format="color|reference" />
+    <!-- 指定扫描框ID -->
+    <attr name="frame_viewid" format="reference"/>
 </resources>
