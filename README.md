@@ -24,7 +24,7 @@
 
 ## 功能介绍
 
-本项目基于[ZBar](https://github.com/ZBar/ZBar)进行开发，分别对视图、相机、解码三个方面进行了高度封装，同时降低三者之间的耦合，增加可灵活配置性。
+本项目基于[ZBar](https://github.com/ZBar/ZBar)进行开发，分别对视图、相机、解码三个方面进行了封装，同时降低三者之间的耦合，增加可灵活配置性。
 
 * 视图
     * 自定义`AdjustTextureView`，继承自`TextureView`，开放`setImageFrameMatrix`接口，可根据自身尺寸、图像帧宽高及旋转角度对图像进行校正，解决预览画面变形等异常问题。
