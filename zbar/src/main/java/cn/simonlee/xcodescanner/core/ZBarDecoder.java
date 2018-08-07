@@ -105,8 +105,6 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
     private Image mZBarImage;
     private ImageScanner mImageScanner;
 
-    private final String TAG = "XCodeScanner";
-
     private final Object decodeLock = new Object();//互斥锁
 
     private Handler mHandler;
@@ -116,26 +114,24 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
     private ThreadPoolExecutor mExecutorService;
     private ArrayBlockingQueue<Runnable> mArrayBlockingQueue;
 
-    private final int HANDLER_DECODE_DELAY = 60001;
-    private final int HANDLER_DECODE_COMPLETE = 60002;
-
     private volatile boolean isDecodeEnabled;//解码开关，默认为true
 
     /**
-     * 如果要指定扫码格式，请使用含参构造方法.
+     * @param listener 解码监听
      */
-    public ZBarDecoder() {
-        this(null);
+    public ZBarDecoder(DecodeListener listener) {
+        this(listener, null);
     }
 
     /**
-     * 指定扫码格式进行识别，支持的格式EAN8、ISBN10、UPCA、EAN13、ISBN13、I25、UPCE、DATABAR
-     * 、DATABAR_EXP、CODABAR、CODE39、PDF417、QRCODE、CODE93、CODE128，可根据实际需要进行配置。
+     * @param listener        解码监听
+     * @param symbolTypeArray 指定条码类型进行识别，支持的格式EAN8、ISBN10、UPCA、EAN13、ISBN13、I25、UPCE、DATABAR、DATABAR_EXP、CODABAR、CODE39、PDF417、QRCODE、CODE93、CODE128，可根据实际需要进行配置。
      */
-    public ZBarDecoder(int[] symbolTypeArray) {
-        this.mHandler = new Handler(this);
-        startDecode();
+    public ZBarDecoder(DecodeListener listener, int[] symbolTypeArray) {
+        this.isDecodeEnabled = true;
+        this.mDecodeListener = listener;
         initZBar(symbolTypeArray);
+        this.mHandler = new Handler(this);
         mArrayBlockingQueue = new ArrayBlockingQueue<>(5);//等待队列最多插入5条任务
         mExecutorService = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, mArrayBlockingQueue);
     }
@@ -145,17 +141,22 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
      */
     private void initZBar(int[] symbolTypeArray) {
         mImageScanner = new ImageScanner();
+        setCodeTypes(symbolTypeArray);
+        mZBarImage = new Image("Y800");
+    }
+
+    @Override
+    public void setCodeTypes(int[] symbolTypeArray) {
         mImageScanner.setConfig(0, Config.X_DENSITY, 3);
         mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
-        mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the Symbols
+        mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the types
         if (symbolTypeArray == null) {
-            symbolTypeArray = new int[]{EAN8, ISBN10, UPCA, EAN13, ISBN13, I25//, PARTIAL, UPCE, DATABAR
+            symbolTypeArray = new int[]{EAN8, ISBN10, UPCA, EAN13, ISBN13, I25//, UPCE, DATABAR, PARTIAL
                     , DATABAR_EXP, CODABAR, CODE39, PDF417, QRCODE, CODE93, CODE128};
         }
         for (int symbolType : symbolTypeArray) {
-            mImageScanner.setConfig(symbolType, Config.ENABLE, 1);//Only symbolType is enable
+            mImageScanner.setConfig(symbolType, Config.ENABLE, 1);//enable codeType
         }
-        mZBarImage = new Image("Y800");
     }
 
     @Override
@@ -190,30 +191,30 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
     public synchronized void decodeForResult(Context context, Uri uri, int requestCode) {
         if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null) {
             mArrayBlockingQueue.clear();
-            mExecutorService.execute(new DecodeRunnable(context.getApplicationContext(), uri, requestCode, System.currentTimeMillis()));
+            mExecutorService.execute(new DecodeRunnable(context.getApplicationContext(), uri, requestCode));
         }
     }
 
     @Override
-    public synchronized void decodeForResult(Bitmap bitmap, RectF rectClipRatio, int requestCode) {
+    public synchronized void decodeForResult(Bitmap bitmap, RectF clipRectRatio, int requestCode) {
         if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null) {
             mArrayBlockingQueue.clear();
-            mExecutorService.execute(new DecodeRunnable(bitmap, rectClipRatio, requestCode, System.currentTimeMillis()));
+            mExecutorService.execute(new DecodeRunnable(bitmap, clipRectRatio, requestCode));
         }
     }
 
     @Override
-    public synchronized void decodeForResult(int[] pixels, int width, int height, RectF rectClipRatio, int requestCode) {
+    public synchronized void decodeForResult(int[] pixels, int width, int height, RectF clipRectRatio, int requestCode) {
         if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null) {
             mArrayBlockingQueue.clear();
-            mExecutorService.execute(new DecodeRunnable(pixels, width, height, rectClipRatio, requestCode, System.currentTimeMillis()));
+            mExecutorService.execute(new DecodeRunnable(pixels, width, height, clipRectRatio, requestCode));
         }
     }
 
     @Override
-    public synchronized void decode(byte[] frameData, int width, int height, RectF rectClipRatio, long timeStamp) {
+    public synchronized void decode(byte[] frameData, int width, int height, RectF clipRectRatio) {
         if (isDecodeEnabled && mExecutorService != null && mArrayBlockingQueue != null && mArrayBlockingQueue.size() < 1) {//等待队列只能有一条任务
-            mExecutorService.execute(new DecodeRunnable(frameData, width, height, rectClipRatio, timeStamp));
+            mExecutorService.execute(new DecodeRunnable(frameData, width, height, clipRectRatio));
         }
     }
 
@@ -243,65 +244,6 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
                 mImageScanner.destroy();
                 mImageScanner = null;
             }
-        }
-    }
-
-    /**
-     * 使用zbar解析图像，返回一个Symbol集合
-     *
-     * @param frameData     图像的byte数组
-     * @param width         图像的宽
-     * @param height        图像的高
-     * @param rectClipRatio 图像区域的剪裁比例
-     */
-    private SymbolSet decodeImage(byte[] frameData, int width, int height, RectF rectClipRatio) {
-        if (mZBarImage == null || mImageScanner == null || frameData == null) return null;
-        mZBarImage.setSize(width, height);
-        if (rectClipRatio != null && !rectClipRatio.isEmpty()) {
-            int frameLeft = (int) (rectClipRatio.left * width);
-            int frameTop = (int) (rectClipRatio.top * height);
-            int frameWidth = (int) (rectClipRatio.width() * width);
-            int frameHeight = (int) (rectClipRatio.height() * height);
-            mZBarImage.setCrop(frameLeft, frameTop, frameWidth, frameHeight);
-        }
-        mZBarImage.setData(frameData);
-        if (mImageScanner.scanImage(mZBarImage) != 0) {
-            return mImageScanner.getResults();
-        }
-        return null;
-    }
-
-    /**
-     * 从Symbol集合中获取结果
-     */
-    private void takeResult(SymbolSet symbolSet, int requestCode, long beginTimeStamp) {
-        if (symbolSet != null && mHandler != null) {
-            for (Symbol symbol : symbolSet) {
-                String result = symbol.getData();
-                if (result != null && result.length() > 0) {
-//                  int count = symbol.getCount();
-//                  int[] bounds = symbol.getBounds();
-//                  byte[] dataBytes = symbol.getDataBytes();
-                    int type = symbol.getType();
-                    int quality = symbol.getQuality();
-                    decodeComplete(result, type, quality, requestCode, beginTimeStamp);
-                    return;
-                }
-            }
-        }
-        decodeComplete(null, 0, 0, requestCode, beginTimeStamp);
-    }
-
-    public void decodeComplete(String result, int type, int quality, int requestCode, long beginTimeStamp) {
-        if (mHandler != null) {
-            Message message = mHandler.obtainMessage(HANDLER_DECODE_COMPLETE);
-            Bundle bundle = message.getData();
-            bundle.putString("result", result);
-            bundle.putInt("type", type);
-            bundle.putInt("quality", quality);
-            bundle.putInt("requestCode", requestCode);
-            message.setData(bundle);
-            mHandler.sendMessage(message);
         }
     }
 
@@ -338,40 +280,35 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
 
         private int mWidth;
         private int mHeight;
-        private RectF mRectClipRatio;
-        private long mBeginTimeStamp;
+        private RectF mClipRectRatio;
 
-        DecodeRunnable(Context context, Uri uri, int requestCode, long beginTimeStamp) {
+        DecodeRunnable(Context context, Uri uri, int requestCode) {
             this.mRequestCode = requestCode;
             this.mContext = context;
             this.mUri = uri;
-            this.mBeginTimeStamp = beginTimeStamp;
         }
 
-        DecodeRunnable(Bitmap bitmap, RectF rectClipRatio, int requestCode, long beginTimeStamp) {
+        DecodeRunnable(Bitmap bitmap, RectF clipRectRatio, int requestCode) {
             this.mRequestCode = requestCode;
             this.mBitmap = bitmap;
             this.mWidth = bitmap.getWidth();
             this.mHeight = bitmap.getHeight();
-            this.mRectClipRatio = rectClipRatio;
-            this.mBeginTimeStamp = beginTimeStamp;
+            this.mClipRectRatio = clipRectRatio;
         }
 
-        DecodeRunnable(int[] pixels, int width, int height, RectF rectClipRatio, int requestCode, long beginTimeStamp) {
+        DecodeRunnable(int[] pixels, int width, int height, RectF clipRectRatio, int requestCode) {
             this.mRequestCode = requestCode;
             this.mPixels = pixels;
             this.mWidth = width;
             this.mHeight = height;
-            this.mRectClipRatio = rectClipRatio;
-            this.mBeginTimeStamp = beginTimeStamp;
+            this.mClipRectRatio = clipRectRatio;
         }
 
-        DecodeRunnable(byte[] frameData, int width, int height, RectF rectClipRatio, long beginTimeStamp) {
+        DecodeRunnable(byte[] frameData, int width, int height, RectF clipRectRatio) {
             this.mYUVFrameData = frameData;
             this.mWidth = width;
             this.mHeight = height;
-            this.mRectClipRatio = rectClipRatio;
-            this.mBeginTimeStamp = beginTimeStamp;
+            this.mClipRectRatio = clipRectRatio;
         }
 
         @Override
@@ -392,71 +329,130 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
                     mYUVFrameData = getYUVFrameData(mPixels, mWidth, mHeight);
                 }
                 //2.解析图像
-                SymbolSet symbolSet = decodeImage(mYUVFrameData, mWidth, mHeight, mRectClipRatio);
+                SymbolSet symbolSet = decodeImage(mYUVFrameData, mWidth, mHeight, mClipRectRatio);
                 //3.分析结果
-                takeResult(symbolSet, mRequestCode, mBeginTimeStamp);
+                analysisResult(symbolSet, mRequestCode);
             }
         }
 
-    }
-
-    private Bitmap getBitmap(Context context, Uri uri) {
-        if (uri == null) return null;
-        InputStream inputStream = null;
-        try {
-            inputStream = context.getContentResolver().openInputStream(uri);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        Bitmap bitmap = BitmapFactory.decodeStream(inputStream, null, options);
-        if (inputStream != null) {
+        private Bitmap getBitmap(Context context, Uri uri) {
+            if (uri == null) return null;
+            InputStream inputStream = null;
             try {
-                inputStream.close();
-            } catch (IOException e) {
+                inputStream = context.getContentResolver().openInputStream(uri);
+            } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream, null, options);
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return bitmap;
         }
-        return bitmap;
-    }
 
-    private int[] getBitmapPixels(Bitmap bitmap) {
-        if (bitmap == null) return null;
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int[] pixels = new int[width * height];
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
-        bitmap.recycle();
-        return pixels;
-    }
+        private int[] getBitmapPixels(Bitmap bitmap) {
+            if (bitmap == null) return null;
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            int[] pixels = new int[width * height];
+            bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+            bitmap.recycle();
+            return pixels;
+        }
 
-    private byte[] getYUVFrameData(int[] pixels, int width, int height) {
-        if (pixels == null) return null;
+        private byte[] getYUVFrameData(int[] pixels, int width, int height) {
+            if (pixels == null) return null;
 
-        int index = 0;
-        int yIndex = 0;
-        int R, G, B, Y, U, V;
-        byte[] frameData = new byte[width * height];
+            int index = 0;
+            int yIndex = 0;
+            int R, G, B, Y, U, V;
+            byte[] frameData = new byte[width * height];
 
-        for (int j = 0; j < height; j++) {
-            for (int i = 0; i < width; i++) {
-                R = (pixels[index] & 0xff0000) >> 16;
-                G = (pixels[index] & 0xff00) >> 8;
-                B = (pixels[index] & 0xff);
+            for (int j = 0; j < height; j++) {
+                for (int i = 0; i < width; i++) {
+                    R = (pixels[index] & 0xff0000) >> 16;
+                    G = (pixels[index] & 0xff00) >> 8;
+                    B = (pixels[index] & 0xff);
 
-                Y = ((66 * R + 129 * G + 25 * B + 128) >> 8) + 16;
+                    Y = ((66 * R + 129 * G + 25 * B + 128) >> 8) + 16;
 //                U = ( ( -38 * R -  74 * G + 112 * B + 128) >> 8) + 128;
 //                V = ( ( 112 * R -  94 * G -  18 * B + 128) >> 8) + 128;
 
-                frameData[yIndex++] = (byte) (Math.max(0, Math.min(Y, 255)));
+                    frameData[yIndex++] = (byte) (Math.max(0, Math.min(Y, 255)));
 //                if (j % 2 == 0 && index % 2 == 0) {
 //                    yuv420sp[uvIndex++] = (byte)(Math.max(0, Math.min(U, 255)));
 //                    yuv420sp[uvIndex++] = (byte)(Math.max(0, Math.min(V, 255)));
 //                }
-                index++;
+                    index++;
+                }
+            }
+            return frameData;
+        }
+
+        /**
+         * 使用zbar解析图像，返回一个Symbol集合
+         *
+         * @param frameData     图像的byte数组
+         * @param width         图像的宽
+         * @param height        图像的高
+         * @param clipRectRatio 图像区域的剪裁比例
+         */
+        private SymbolSet decodeImage(byte[] frameData, int width, int height, RectF clipRectRatio) {
+            if (mZBarImage == null || mImageScanner == null || frameData == null) return null;
+            mZBarImage.setSize(width, height);
+            if (clipRectRatio != null && !clipRectRatio.isEmpty()) {
+                int frameLeft = (int) (clipRectRatio.left * width);
+                int frameTop = (int) (clipRectRatio.top * height);
+                int frameWidth = (int) (clipRectRatio.width() * width);
+                int frameHeight = (int) (clipRectRatio.height() * height);
+                mZBarImage.setCrop(frameLeft, frameTop, frameWidth, frameHeight);
+            }
+            mZBarImage.setData(frameData);
+            if (mImageScanner.scanImage(mZBarImage) != 0) {
+                return mImageScanner.getResults();
+            }
+            return null;
+        }
+
+        /**
+         * 从Symbol集合中获取结果
+         */
+        private void analysisResult(SymbolSet symbolSet, int requestCode) {
+            if (symbolSet != null && mHandler != null) {
+                for (Symbol symbol : symbolSet) {
+                    String result = symbol.getData();
+                    if (result != null && result.length() > 0) {
+//                  int count = symbol.getCount();
+//                  int[] bounds = symbol.getBounds();
+//                  byte[] dataBytes = symbol.getDataBytes();
+                        int type = symbol.getType();
+                        int quality = symbol.getQuality();
+                        decodeComplete(result, type, quality, requestCode);
+                        return;
+                    }
+                }
+            }
+            decodeComplete(null, 0, 0, requestCode);
+        }
+
+        private void decodeComplete(String result, int type, int quality, int requestCode) {
+            if (mHandler != null) {
+                Message message = mHandler.obtainMessage(HANDLER_DECODE_COMPLETE);
+                Bundle bundle = message.getData();
+                bundle.putString("result", result);
+                bundle.putInt("type", type);
+                bundle.putInt("quality", quality);
+                bundle.putInt("requestCode", requestCode);
+                message.setData(bundle);
+                mHandler.sendMessage(message);
             }
         }
-        return frameData;
+
     }
 
 }

@@ -63,20 +63,19 @@
     在Activity的onCreate方法中获取CameraScanner实例，并对CameraScanner和TextureView设置监听
     ```java
     public void onCreate(Bundle savedInstanceState) {
-       super.onCreate(savedInstanceState);
-       setContentView(R.layout.activity_scan_constraint);
-       mTextureView = findViewById(R.id.textureview);
-       mTextureView.setSurfaceTextureListener(this);
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_scan_constraint);
+        mTextureView = findViewById(R.id.textureview);
+        mTextureView.setSurfaceTextureListener(this);
         /*
         * 注意，SDK21的设备是可以使用NewCameraScanner的，但是可能存在对新API支持不够的情况，比如红米Note3（双网通Android5.0.2）
         * 开发者可自行配置使用规则，比如针对某设备型号过滤，或者针对某SDK版本过滤
         * */
-       if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP) {//此处示例过滤掉了SDK21
-          mCameraScanner = OldCameraScanner.getInstance();
-       } else {
-          mCameraScanner = NewCameraScanner.getInstance();
-       }
-       mCameraScanner.setCameraListener(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mCameraScanner = new NewCameraScanner(this);
+        } else {
+            mCameraScanner = new OldCameraScanner(this);
+        }
     }
     ```
 
@@ -85,9 +84,9 @@
     在onSurfaceTextureAvailable回调中设置SurfaceTexture及TextureView的宽高，然后开启相机
     ```java
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-       mCameraScanner.setSurfaceTexture(surface);
-       mCameraScanner.setPreviewSize(width, height);
-       mCameraScanner.openCamera(this.getApplicationContext());
+        mCameraScanner.setSurfaceTexture(surface);
+        mCameraScanner.setPreviewSize(width, height);
+        mCameraScanner.openCamera(this);
     }
     ```
 
@@ -96,14 +95,13 @@
     在openCameraSuccess回调中设置图像帧的宽高及旋转角度，获取ZBarDecoder实例设置给CameraScanner
     ```java
     public void openCameraSuccess(int frameWidth, int frameHeight, int frameDegree) {
-       mTextureView.setImageFrameMatrix(frameWidth, frameHeight, frameDegree);
-       if (mGraphicDecoder == null) {
-          mGraphicDecoder = new ZBarDecoder();//使用带参构造方法可指定条码识别的格式
-          mGraphicDecoder.setDecodeListener(this);
-       }
-       //调用setFrameRect方法会对识别区域进行限制，注意getLeft等获取的是相对于父容器左上角的坐标，实际应传入相对于TextureView左上角的坐标。
-       mCameraScanner.setFrameRect(mScannerFrameView.getLeft(), mScannerFrameView.getTop(), mScannerFrameView.getRight(), mScannerFrameView.getBottom());
-       mCameraScanner.setGraphicDecoder(mZBarDecoder);
+        mTextureView.setImageFrameMatrix(frameWidth, frameHeight, frameDegree);
+        if (mGraphicDecoder == null) {
+            mGraphicDecoder = new ZBarDecoder(this);//可使用二参构造方法指定条码识别的类型
+        }
+        //调用setFrameRect方法会对识别区域进行限制，注意getLeft等获取的是相对于父容器左上角的坐标，实际应传入相对于TextureView左上角的坐标。
+        mCameraScanner.setFrameRect(mScannerFrameView.getLeft(), mScannerFrameView.getTop(), mScannerFrameView.getRight(), mScannerFrameView.getBottom());
+        mCameraScanner.setGraphicDecoder(mZBarDecoder);
     }
     ```
 
@@ -112,7 +110,7 @@
     在ZBarDecoder的decodeSuccess回调中获取解析结果，开发者可根据回传的条码类型及精度自定义脏数据过滤规则
     ```java
     public void decodeSuccess(int type, int quality, String result) {
-       ToastHelper.showToast("[类型" + type + "/精度" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
+        ToastHelper.showToast("[类型" + type + "/精度" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
     }
     ```
 
@@ -121,42 +119,46 @@
     在Activity的onDestroy方法中关闭相机和解码
     ```java
     public void onDestroy() {
-       mCameraScanner.setGraphicDecoder(null);
-       mCameraScanner.detach();
-       if (mGraphicDecoder != null) {
-          mGraphicDecoder.setDecodeListener(null);
-          mGraphicDecoder.detach();
-       }
-       super.onDestroy();
+        mCameraScanner.setGraphicDecoder(null);
+        mCameraScanner.detach();
+        if (mGraphicDecoder != null) {
+            mGraphicDecoder.setDecodeListener(null);
+            mGraphicDecoder.detach();
+        }
+        super.onDestroy();
     }
     ```
 
 ## 注意事项
 
-* **First**
+* **Tips.1**
 
     在Activity的onPause方法中关闭相机
     ```java
     public void onPause() {
-       mCameraScanner.closeCamera();
-       super.onPause();
+        mCameraScanner.closeCamera();
+        super.onPause();
     }
     ```
 
-* **Second**
+* **Tips.2**
 
     在Activity的onRestart方法中开启相机
     ```java
     public void onRestart() {
-       //部分机型在后台转前台时会回调onSurfaceTextureAvailable开启相机，因此要做判断防止重复开启
-       if (mTextureView.isAvailable()) {
-          mCameraScanner.setSurfaceTexture(mTextureView.getSurfaceTexture());
-          mCameraScanner.setPreviewSize(mTextureView.getWidth(), mTextureView.getHeight());
-          mCameraScanner.openCamera(this.getApplicationContext());
-       }
-       super.onRestart();
+        //部分机型在后台转前台时会回调onSurfaceTextureAvailable开启相机，因此要做判断防止重复开启
+        if (mTextureView.isAvailable()) {
+            mCameraScanner.setSurfaceTexture(mTextureView.getSurfaceTexture());
+            mCameraScanner.setPreviewSize(mTextureView.getWidth(), mTextureView.getHeight());
+            mCameraScanner.openCamera(this.getApplicationContext());
+        }
+        super.onRestart();
     }
     ```
+
+* **Tips.3**
+
+    设置扫码框识别区域时，要考虑到扫码框的margin和padding属性。
 
 ## 更新计划
 
@@ -171,8 +173,9 @@
 *  V1.1.7   `2018/XX/XX` 待发布
    1. 修复armeabi架构无法识别二维码的问题。
    2. 增加亮度反馈，可实现提示开启闪光灯功能。
-   3. CameraScanner取消单例模式，增加单例信号量CameraLock控制可能产生的相机并发操作。
-   4. 界面调整。
+   3. `CameraScanner`取消单例模式，增加单例信号量`CameraLock`解决可能产生的相机并发操作。
+   4. `GraphicDecoder`新增`setCodeTypes`接口指定识别的类型。
+   5. demo界面调整。
 
 *  V1.1.6   `2018/05/08`
    1. `GraphicDecoder`增加本地图片识别接口。
@@ -202,7 +205,7 @@
    4. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.3`，`codescanner`变更为`xcodescanner`，由此带来不便的敬请谅解。
 
 *  V1.1.2   `2018/04/24`
-   1. 解决`ZBarDecoder`中设置解码格式无效的问题。
+   1. 解决`ZBarDecoder`中设置解码类型无效的问题。
 
 *  V1.1.1   `2018/04/16`
    1. `ScannerFrameView`增加高占比属性，可设置相对父容器高的占比。
@@ -233,7 +236,7 @@
 
 *  V1.0.5   `2018/03/29`
     1. 增加帧数据的最大尺寸限制，避免因过高像素导致ZBar解析二维码失败。
-    2. 屏蔽ZBar对DataBar(RSS-14)格式条码的支持，此格式实用性不高，且易产生误判。
+    2. 屏蔽ZBar对DataBar(RSS-14)类型条码的支持，此类型实用性不高，且易产生误判。
 
 *  V1.0.4   `2018/03/27`
     1. 修改`ZBarDecoder`，修复多线程可能的空指针异常。

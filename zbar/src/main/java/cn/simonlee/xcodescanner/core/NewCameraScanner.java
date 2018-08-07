@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  * @createdTime 2018-02-02
  */
-@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+@android.support.annotation.RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class NewCameraScanner implements CameraScanner, Handler.Callback {
 
     /**
@@ -225,25 +225,27 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
             }
             mPreviewBuilder = null;
             mCaptureSession = null;
+            mCameraLock.release();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        mCameraLock.release();
     }
 
     @Override
     public void openFlash() {
         try {
             mCameraLock.acquire();
-            if (mCaptureSession != null && mPreviewBuilder != null) {
-                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-                mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
-                mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);//无限次的重复获取图像
+            try {
+                if (mCaptureSession != null && mPreviewBuilder != null) {
+                    mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                    mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                    mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);//无限次的重复获取图像
+                }
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
             }
             mCameraLock.release();
         } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
@@ -252,15 +254,17 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
     public void closeFlash() {
         try {
             mCameraLock.acquire();
-            if (mCaptureSession != null && mPreviewBuilder != null) {
-                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-                mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
-                mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);//无限次的重复获取图像
+            try {
+                if (mCaptureSession != null && mPreviewBuilder != null) {
+                    mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                    mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+                    mCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);//无限次的重复获取图像
+                }
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
             }
             mCameraLock.release();
         } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
@@ -493,7 +497,9 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
             }
             mCameraDevice.createCaptureSession(surfaceList, getSessionStateCallback(), mBackgroundHandler);//创建会话
         } catch (CameraAccessException e) {//创建会话失败
-            mCameraLock.release();
+            if (mCameraLock.availablePermits() < 1) {
+                mCameraLock.release();
+            }
             Log.e(TAG, getClass().getName() + ".createCaptureSession() : " + e);
             if (mCurThreadHandler != null) {
                 mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CREATSESSION));
@@ -521,13 +527,17 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                             mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CONFIG));
                         }
                     }
-                    mCameraLock.release();
+                    if (mCameraLock.availablePermits() < 1) {
+                        mCameraLock.release();
+                    }
                 }
 
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession session) {
                     Log.d(TAG, getClass().getName() + ".onConfigureFailed()");
-                    mCameraLock.release();
+                    if (mCameraLock.availablePermits() < 1) {
+                        mCameraLock.release();
+                    }
                     if (mCurThreadHandler != null) {
                         mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_FAIL_CONFIG));
                     }
@@ -559,7 +569,7 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                                 mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_CHANGED_BRIGHTNESS));
                             }
                         }
-                        mGraphicDecoder.decode(frameData, width, height, mClipRectRatio, 0);
+                        mGraphicDecoder.decode(frameData, width, height, mClipRectRatio);
                     }
                 }
             };

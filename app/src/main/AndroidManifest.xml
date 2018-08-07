@@ -24,11 +24,6 @@
             android:launchMode="singleTask"
             android:screenOrientation="behind"
             android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".DebugScanActivity"
-            android:launchMode="singleTask"
-            android:screenOrientation="behind"
-            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

@@ -14,11 +14,12 @@ import cn.simonlee.xcodescanner.core.CameraScanner;
 import cn.simonlee.xcodescanner.core.GraphicDecoder;
 import cn.simonlee.xcodescanner.core.NewCameraScanner;
 import cn.simonlee.xcodescanner.core.OldCameraScanner;
-import cn.simonlee.xcodescanner.core.ZBarDecoder;
 import cn.simonlee.xcodescanner.view.AdjustTextureView;
 import cn.simonlee.xcodescanner.view.ScannerFrameView;
 
 /**
+ * 扫码页面
+ *
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
@@ -33,17 +34,12 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
 
     protected String TAG = "XCodeScanner";
     private Button mButton_Flash;
+    private int[] mCodeType;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, getClass().getName() + ".onCreate()");
         super.onCreate(savedInstanceState);
-
-        Intent intent = getIntent();
-        boolean newAPI = intent.getBooleanExtra("newAPI", false);
-        boolean constraintLayout = intent.getBooleanExtra("constraintLayout", false);
-
-        setContentView(constraintLayout ? R.layout.activity_scan_constraint : R.layout.activity_scan_relative);
+        setContentView(R.layout.activity_scan_constraint);
 
         Toolbar toolbar = getToolbar();
         if (toolbar != null) {
@@ -52,26 +48,29 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
         }
 
         mTextureView = findViewById(R.id.textureview);
+        mTextureView.setSurfaceTextureListener(this);
+
         mScannerFrameView = findViewById(R.id.scannerframe);
+
         mButton_Flash = findViewById(R.id.btn_flash);
         mButton_Flash.setOnClickListener(this);
+
+        Intent intent = getIntent();
+        mCodeType = intent.getIntArrayExtra("codeType");
 
         /*
         * 注意，SDK21的设备是可以使用NewCameraScanner的，但是可能存在对新API支持不够的情况，比如红米Note3（双网通Android5.0.2）
         * 开发者可自行配置使用规则，比如针对某设备型号过滤，或者针对某SDK版本过滤
         * */
-        if (newAPI && Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+        if (intent.getBooleanExtra("newAPI", false) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mCameraScanner = new NewCameraScanner(this);
         } else {
             mCameraScanner = new OldCameraScanner(this);
         }
-
-        mTextureView.setSurfaceTextureListener(this);
     }
 
     @Override
     protected void onRestart() {
-        Log.d(TAG, getClass().getName() + ".onRestart()");
         if (mTextureView.isAvailable()) {
             //部分机型转到后台不会走onSurfaceTextureDestroyed()，因此isAvailable()一直为true，转到前台后不会再调用onSurfaceTextureAvailable()
             //因此需要手动开启相机
@@ -84,14 +83,12 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
 
     @Override
     protected void onPause() {
-        Log.d(TAG, getClass().getName() + ".onPause()");
         mCameraScanner.closeCamera();
         super.onPause();
     }
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, getClass().getName() + ".onDestroy()");
         mCameraScanner.setGraphicDecoder(null);
         if (mGraphicDecoder != null) {
             mGraphicDecoder.setDecodeListener(null);
@@ -133,8 +130,7 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
         Log.e(TAG, getClass().getName() + ".openCameraSuccess() frameWidth = " + frameWidth + " , frameHeight = " + frameHeight + " , frameDegree = " + frameDegree);
         mTextureView.setImageFrameMatrix(frameWidth, frameHeight, frameDegree);
         if (mGraphicDecoder == null) {
-            mGraphicDecoder = new ZBarDecoder();//使用带参构造方法可指定条码识别的格式
-            mGraphicDecoder.setDecodeListener(this);
+            mGraphicDecoder = new DebugZBarDecoder(this, mCodeType);//使用带参构造方法可指定条码识别的格式
         }
         //该区域坐标为相对于父容器的左上角顶点。
         //TODO 应考虑TextureView与ScannerFrameView的Margin与padding的情况

@@ -65,7 +65,7 @@
             android:background="@color/gray_translucent"
             android:padding="5dp"
             android:text="@string/tips_scan"
-            android:textColor="@color/gray"
+            android:textColor="@color/gray_light_lv5"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/scannerframe" />

@@ -12,26 +12,28 @@ import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.widget.RadioGroup;
-import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import cn.simonlee.xcodescanner.core.GraphicDecoder;
 import cn.simonlee.xcodescanner.core.ZBarDecoder;
 
 /**
+ * 主界面
+ *
  * @author Simon Lee
  * @e-mail jmlixiaomeng@163.com
  * @github https://github.com/Simon-Leeeeeeeee/XCodeScanner
  */
-public class MainActivity extends BaseActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener, GraphicDecoder.DecodeListener {
+public class MainActivity extends BaseActivity implements View.OnClickListener, GraphicDecoder.DecodeListener {
 
-    private final int MODE_RELEASE = 0;
-    private final int MODE_DEBUG = 1;
-
-    private boolean newAPI = false;
-    private boolean constraintLayout = false;
+    private final int API_OLD = 0;
+    private final int API_NEW = 1;
 
     private GraphicDecoder mGraphicDecoder;
+    private List<RadioButton> mTypeRadioList = new ArrayList<>();
+    private int[] mCodeTypeArray;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -44,83 +46,84 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
         }
 
         findViewById(R.id.btn_local).setOnClickListener(this);
-        findViewById(R.id.btn_scan).setOnClickListener(this);
-        findViewById(R.id.btn_scan_debug).setOnClickListener(this);
+        findViewById(R.id.btn_scan_oldapi).setOnClickListener(this);
+        findViewById(R.id.btn_scan_newapi).setOnClickListener(this);
 
         findViewById(R.id.btn_jianshu).setOnClickListener(this);
         findViewById(R.id.btn_juejin).setOnClickListener(this);
         findViewById(R.id.btn_github).setOnClickListener(this);
 
-        ((RadioGroup) findViewById(R.id.radiogroup_api)).setOnCheckedChangeListener(this);
-        ((RadioGroup) findViewById(R.id.radiogroup_layout)).setOnCheckedChangeListener(this);
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_codabar));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_code39));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_code93));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_code128));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_databar));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_databar_exp));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_ean8));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_ean13));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_i25));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_isbn10));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_isbn13));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_pdf417));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_qrcode));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_upca));
+        mTypeRadioList.add((RadioButton) findViewById(R.id.main_radio_codetype_upce));
 
-        StringBuilder ABIBuilder = new StringBuilder();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            String[] ABIS = Build.SUPPORTED_ABIS;
-            for (String ABI : ABIS) {
-                ABIBuilder.append(ABI).append("/");
-            }
-        }
-        ((TextView) findViewById(R.id.textview_abi)).setText(ABIBuilder.append(android.os.Build.CPU_ABI));
-    }
-
-    @Override
-    public void onCheckedChanged(RadioGroup group, int checkedId) {
-        switch (checkedId) {
-            case R.id.radio_api_old: {
-                newAPI = false;
-                break;
-            }
-            case R.id.radio_api_new: {
-                newAPI = true;
-                break;
-            }
-            case R.id.radio_layout_relative: {
-                constraintLayout = false;
-                break;
-            }
-            case R.id.radio_layout_constraint: {
-                constraintLayout = true;
-                break;
-            }
-        }
+        mCodeTypeArray = new int[]{ZBarDecoder.CODABAR, ZBarDecoder.CODE39, ZBarDecoder.CODE93, ZBarDecoder.CODE128, ZBarDecoder.DATABAR, ZBarDecoder.DATABAR_EXP
+                , ZBarDecoder.EAN8, ZBarDecoder.EAN13, ZBarDecoder.I25, ZBarDecoder.ISBN10, ZBarDecoder.ISBN13, ZBarDecoder.PDF417, ZBarDecoder.QRCODE
+                , ZBarDecoder.UPCA, ZBarDecoder.UPCE};
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.btn_scan_oldapi: {
+                startScan(API_OLD);
+                break;
+            }
+            case R.id.btn_scan_newapi: {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                    ToastHelper.showToast(this, "新API需要Android5.0及以上", ToastHelper.LENGTH_SHORT);
+                } else {
+                    startScan(API_NEW);
+                }
+                break;
+            }
             case R.id.btn_local: {
                 Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                 startActivityForResult(intent, 999);
-                return;
+                break;
             }
             case R.id.btn_jianshu: {
                 Uri uri = Uri.parse("https://www.jianshu.com/p/65df16604646");
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(intent);
-                return;
+                break;
             }
             case R.id.btn_juejin: {
                 Uri uri = Uri.parse("https://juejin.im/post/5adf0f166fb9a07ac23a62d1");
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(intent);
-                return;
+                break;
             }
             case R.id.btn_github: {
                 Uri uri = Uri.parse("https://github.com/Simon-Leeeeeeeee/XCodeScanner");
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(intent);
-                return;
+                break;
             }
         }
-        int mode = v.getId() == R.id.btn_scan_debug ? MODE_DEBUG : MODE_RELEASE;
+    }
 
+    private void startScan(int api) {
         int permissionState = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
-
         if (permissionState == PackageManager.PERMISSION_GRANTED) {
-            startScan(mode);
+            Intent intent = new Intent(this, ScanActivity.class);
+            intent.putExtra("newAPI", api == API_NEW);
+            intent.putExtra("codeType", getCodeType());
+            startActivity(intent);
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, mode);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, api);
         }
     }
 
@@ -129,8 +132,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 999 && resultCode == Activity.RESULT_OK && data != null) {
             if (mGraphicDecoder == null) {
-                mGraphicDecoder = new ZBarDecoder();//使用带参构造方法可指定条码识别的格式
-                mGraphicDecoder.setDecodeListener(this);
+                mGraphicDecoder = new ZBarDecoder(this, getCodeType());//使用带参构造方法可指定条码识别的类型
+            } else {
+                mGraphicDecoder.setCodeTypes(getCodeType());//指定条码识别的类型
             }
             mGraphicDecoder.decodeForResult(this, data.getData(), 999);
         }
@@ -155,21 +159,10 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
         super.onDestroy();
     }
 
-    private void startScan(int mode) {
-        if (newAPI && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            ToastHelper.showToast(this, "新API需要Android5.0及以上", ToastHelper.LENGTH_SHORT);
-            return;
-        }
-        Intent intent = new Intent(this, mode == MODE_DEBUG ? DebugScanActivity.class : ScanActivity.class);
-        intent.putExtra("newAPI", newAPI);
-        intent.putExtra("constraintLayout", constraintLayout);
-        startActivity(intent);
-    }
-
     @Override
     public void decodeComplete(String result, int type, int quality, int requestCode) {
         if (result == null) {
-            ToastHelper.showToast(this, "未识别到条码呀", ToastHelper.LENGTH_SHORT);
+            ToastHelper.showToast(this, "未识别到指定类型条码", ToastHelper.LENGTH_SHORT);
         } else {
             if (quality < 10) {
                 ToastHelper.showToast(this, "[类型" + type + "/精度00" + quality + "]" + result, ToastHelper.LENGTH_SHORT);
@@ -180,4 +173,21 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
             }
         }
     }
+
+    private int[] getCodeType() {
+        int count = 0;
+        for (RadioButton radioButton : mTypeRadioList) {
+            if (radioButton.isChecked()) {
+                count++;
+            }
+        }
+        int[] typeArray = new int[count];
+        for (int index = 0; index < mTypeRadioList.size(); index++) {
+            if (mTypeRadioList.get(index).isChecked()) {
+                typeArray[--count] = mCodeTypeArray[index];
+            }
+        }
+        return typeArray;
+    }
+
 }

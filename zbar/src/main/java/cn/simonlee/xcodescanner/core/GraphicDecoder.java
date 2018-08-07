@@ -14,6 +14,23 @@ import android.net.Uri;
 @SuppressWarnings("unused")
 public interface GraphicDecoder {
 
+    String TAG = "XCodeScanner";
+
+    /**
+     * 延时解码
+     */
+    int HANDLER_DECODE_DELAY = 60001;
+
+    /**
+     * 解码完成
+     */
+    int HANDLER_DECODE_COMPLETE = 60002;
+
+    /**
+     * 指定解码类型
+     */
+    void setCodeTypes(int[] codeType);
+
     /**
      * 设置解码监听
      */
@@ -55,7 +72,7 @@ public interface GraphicDecoder {
     /**
      * 传入图片的YUV数组及图像宽高进行解码
      */
-    void decode(byte[] frameData, int width, int height, RectF rectClipRatio, long timeStamp);
+    void decode(byte[] frameData, int width, int height, RectF rectClipRatio);
 
     void detach();
 

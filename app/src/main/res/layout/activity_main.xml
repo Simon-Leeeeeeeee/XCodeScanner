@@ -16,20 +16,11 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/textview_abi"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingLeft="10dp"
-                android:paddingTop="10dp"
-                android:text="ABI"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
-
-            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="5dp"
                 android:paddingLeft="10dp"
+                android:paddingRight="10dp"
                 android:paddingTop="10dp"
                 android:text="@string/synopsis"
                 android:textColor="@color/black"
@@ -39,85 +30,164 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="10dp"
-                android:paddingLeft="30dp"
-                android:paddingRight="5dp"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
                 android:text="@string/synopsis_instructions"
                 android:textColor="@color/black"
                 android:textSize="16sp" />
 
-            <RadioGroup
-                android:id="@+id/radiogroup_layout"
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checkedButton="@id/radio_layout_relative"
-                android:orientation="horizontal"
-                android:padding="5dp">
+                android:paddingBottom="5dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="10dp"
+                android:text="@string/type_decode"
+                android:textColor="@color/black"
+                android:textSize="20sp" />
 
-                <RadioButton
-                    android:id="@+id/radio_layout_relative"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:lines="1"
-                    android:text="@string/layout_relative" />
-
-                <RadioButton
-                    android:id="@+id/radio_layout_constraint"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:lines="1"
-                    android:text="@string/layout_constraint" />
-
-            </RadioGroup>
-
-            <RadioGroup
-                android:id="@+id/radiogroup_api"
+            <cn.simonlee.widget.autowraplayout.AutoWrapGridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checkedButton="@id/radio_api_old"
-                android:orientation="horizontal"
-                android:padding="5dp">
+                android:paddingBottom="10dp"
+                android:paddingLeft="10dp">
 
-                <RadioButton
-                    android:id="@+id/radio_api_old"
-                    android:layout_width="0dp"
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_codabar"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:lines="1"
-                    android:text="@string/api_old" />
+                    android:checked="true"
+                    android:text="@string/codetype_codabar" />
 
-                <RadioButton
-                    android:id="@+id/radio_api_new"
-                    android:layout_width="0dp"
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_code39"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:lines="1"
-                    android:text="@string/api_new" />
+                    android:checked="true"
+                    android:text="@string/codetype_code39" />
 
-            </RadioGroup>
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_code93"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_code93" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_code128"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_code128" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_databar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/codetype_databar" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_databar_exp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/codetype_databar_exp" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_ean8"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_ean8" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_ean13"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_ean13" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_i25"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_i25" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_isbn10"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_isbn10" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_isbn13"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_isbn13" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_pdf417"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_pdf417" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_qrcode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/codetype_qrcode" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_upca"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/codetype_upca" />
+
+                <cn.simonlee.demo.xcodescanner.RadioButton
+                    android:id="@+id/main_radio_codetype_upce"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/codetype_upce" />
+
+            </cn.simonlee.widget.autowraplayout.AutoWrapGridLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="5dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="10dp"
+                android:text="@string/scan"
+                android:textColor="@color/black"
+                android:textSize="20sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:paddingBottom="10dp"
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp">
 
                 <Button
-                    android:id="@+id/btn_scan"
+                    android:id="@+id/btn_scan_oldapi"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="@string/scan" />
+                    android:text="@string/api_old" />
 
                 <Button
-                    android:id="@+id/btn_scan_debug"
+                    android:id="@+id/btn_scan_newapi"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="@string/scan_debug" />
+                    android:text="@string/api_new" />
 
                 <Button
                     android:id="@+id/btn_local"
@@ -133,6 +203,7 @@
                 android:layout_height="wrap_content"
                 android:paddingBottom="5dp"
                 android:paddingLeft="10dp"
+                android:paddingRight="10dp"
                 android:paddingTop="10dp"
                 android:text="@string/feedback"
                 android:textColor="@color/black"
@@ -142,8 +213,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="10dp"
-                android:paddingLeft="30dp"
-                android:paddingRight="5dp"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
                 android:text="@string/feedback_instructions"
                 android:textColor="@color/black"
                 android:textSize="16sp" />

@@ -173,10 +173,10 @@ public class OldCameraScanner implements CameraScanner, Handler.Callback {
                 mCamera.release();
                 mCamera = null;
             }
-        } catch (Exception e) {
+            mCameraLock.release();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        mCameraLock.release();
     }
 
     @Override
@@ -382,7 +382,7 @@ public class OldCameraScanner implements CameraScanner, Handler.Callback {
                                 mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_CHANGED_BRIGHTNESS));
                             }
                         }
-                        mGraphicDecoder.decode(frameData, mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), mClipRectRatio, 0);
+                        mGraphicDecoder.decode(frameData, mSurfaceSize.getWidth(), mSurfaceSize.getHeight(), mClipRectRatio);
                     }
                 }
             };

@@ -5,8 +5,9 @@
         1.支持API14(Android4.0)及以上版本
         \n2.支持自动对焦
         \n3.支持精度及条码类型过滤
-        \n2.支持自定义布局、自定义扫描框
-        \n4.支持前后台横竖屏切换</string>
+        \n4.支持自定义布局、自定义扫描框
+        \n5.支持前后台横竖屏任意切换
+        \n6.支持亮度反馈</string>
 
     <string name="feedback_instructions">如果存在闪退、黑屏、图像变形、预览丢帧、反应迟钝、无法对焦、无法识别等问题，请尽可能及时且详细反馈给我，我会尽快安排解决</string>
 
@@ -30,5 +31,22 @@
 
     <string name="tips_scan">将二维码/条码放入框内，即可自动扫描</string>
     <string name="tips_scan_debug">解析图像每秒%1$d帧，平均耗时%2$dms</string>
+
+    <string name="type_decode">识别类型</string>
+    <string name="codetype_codabar">codabar</string>
+    <string name="codetype_code39">code39</string>
+    <string name="codetype_code93">code93</string>
+    <string name="codetype_code128">code128</string>
+    <string name="codetype_databar">databar</string>
+    <string name="codetype_databar_exp">databar_exp</string>
+    <string name="codetype_ean8">ean8</string>
+    <string name="codetype_ean13">ean13</string>
+    <string name="codetype_i25">i25</string>
+    <string name="codetype_isbn10">isbn10</string>
+    <string name="codetype_isbn13">isbn13</string>
+    <string name="codetype_pdf417">pdf417</string>
+    <string name="codetype_qrcode">qrcode</string>
+    <string name="codetype_upca">upca</string>
+    <string name="codetype_upce">upce</string>
 
 </resources>
