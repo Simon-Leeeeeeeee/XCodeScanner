@@ -52,7 +52,7 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
-        implementation 'cn.simonlee.xcodescanner:zbar:1.1.6'
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.7'
     }
 ```
 
@@ -162,9 +162,7 @@
 
 ## 更新计划
 
-*  增加扫描线自定义drawable。
 *  结合OpenCV，提供二维码检测、二维码定位、角度校正、图像滤波等支持，以解决复杂图形的识别问题。
-*  增加环境亮度监测。
 *  增加Zxing支持。
 *  增加二维码生成功能。
 
