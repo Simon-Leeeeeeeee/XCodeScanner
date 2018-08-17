@@ -60,6 +60,7 @@ public interface GraphicDecoder {
     /**
      * 传入Bitmap对象进行解码
      * 注意：1.会清空任务队列中的所有任务 2.立即回收bitmap对象会报错 3.解码结束会自动回收该对象
+     * TODO ？？ 有没有可能会内存泄漏呢
      */
     void decodeForResult(Bitmap bitmap, RectF rectClipRatio, int requestCode);
 

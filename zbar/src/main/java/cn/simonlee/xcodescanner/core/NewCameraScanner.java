@@ -1,7 +1,6 @@
 package cn.simonlee.xcodescanner.core;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.RectF;

@@ -35,7 +35,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     @CallSuper
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        supportSwipeBack(0);//开启侧滑返回
+        supportSwipeBack();//开启侧滑返回
         fixToolbarPadding();//校正Toolbar的paddingTop
     }
 
@@ -130,14 +130,11 @@ public abstract class BaseActivity extends AppCompatActivity {
     /**
      * 开启侧滑返回
      */
-    public void supportSwipeBack(int color) {
+    public void supportSwipeBack() {
         if (mSwipeBackHelper == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             mSwipeBackHelper = new SwipeBackHelper(this);
-            if (color >>> 24 <= 0) {
-                color = getResources().getColor(R.color.colorWindowBackground);
-            }
 //            //设置窗口背景颜色，覆盖不可见区域出现的黑色（不可见区域常见为当输入法及导航栏变化时的背景）
-            mSwipeBackHelper.setWindowBackgroundColor(color | 0XFF000000);
+            mSwipeBackHelper.setWindowBackgroundColor(getResources().getColor(R.color.colorWindowBackground));
         }
     }
 

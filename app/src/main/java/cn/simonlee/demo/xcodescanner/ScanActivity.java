@@ -38,7 +38,7 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_scan_constraint);
+        setContentView(R.layout.activity_scan);
 
         Toolbar toolbar = getToolbar();
         if (toolbar != null) {

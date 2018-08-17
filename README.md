@@ -85,7 +85,7 @@
     在onSurfaceTextureAvailable回调中设置SurfaceTexture及TextureView的宽高，然后开启相机
     ```java
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        mCameraScanner.setSurfaceTexture(surface);
+        mCameraScanner.setPreviewTexture(surface);
         mCameraScanner.setPreviewSize(width, height);
         mCameraScanner.openCamera(this);
     }
@@ -149,7 +149,7 @@
     public void onRestart() {
         //部分机型在后台转前台时会回调onSurfaceTextureAvailable开启相机，因此要做判断防止重复开启
         if (mTextureView.isAvailable()) {
-            mCameraScanner.setSurfaceTexture(mTextureView.getSurfaceTexture());
+            mCameraScanner.setPreviewTexture(mTextureView.getSurfaceTexture());
             mCameraScanner.setPreviewSize(mTextureView.getWidth(), mTextureView.getHeight());
             mCameraScanner.openCamera(this.getApplicationContext());
         }
@@ -172,11 +172,18 @@
 *  V1.1.7   `2018/08/07`
    1. 修复armeabi架构无法识别二维码的问题。
    2. 增加亮度反馈，可实现提示开启闪光灯功能。
-   3. `CameraScanner`取消单例模式，增加单例信号量`CameraLock`解决可能产生的相机并发操作。
-   4. `GraphicDecoder`新增`setCodeTypes`接口指定识别的类型。
+   3. `OldCameraScanner`和`NewCameraScanner`取消单例模式，增加单例信号量`CameraLock`解决可能产生的相机并发操作。
+   4. `GraphicDecoder`新增`setCodeTypes(int[] codeType)`接口指定识别的类型。
    5. `MaskConstraintLayout`及`MaskRelativeLayout`新增`frame_viewid`属性，用于指定绘制阴影的View（便于开发者使用自定义的扫描框）。
    6. demo界面调整。
    7. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.7`。
+
+   补充：
+   1. `ZBarDecoder`构造方法调整。
+   2. `CameraScanner`中的`setSurfaceTexture(SurfaceTexture surfaceTexture)`接口更名为`setPreviewTexture(SurfaceTexture surfaceTexture)`，便于理解。
+   3. `CameraScanner`新增`enableBrightnessFeedback(boolean enable)`接口，设置是否开启亮度回馈。
+   4. `CameraListener`新增`cameraBrightnessChanged(int brightness)`接口，对亮度变化进行回馈。
+   5. 移除`BaseHandler`。
 
 *  V1.1.6   `2018/05/08`
    1. `GraphicDecoder`增加本地图片识别接口。

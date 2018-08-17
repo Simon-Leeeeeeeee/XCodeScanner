@@ -47,7 +47,7 @@ public class SplashActivity extends BaseActivity implements Handler.Callback {
     public boolean handleMessage(Message msg) {
         startActivity(new Intent(this, MainActivity.class));
         finish();
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        overridePendingTransition(R.anim.activity_fade_enter, R.anim.activity_fade_exit);
         return true;
     }
 

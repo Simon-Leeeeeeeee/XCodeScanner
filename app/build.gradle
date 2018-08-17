@@ -26,11 +26,11 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:27.1.1'
 
-    implementation 'cn.simonlee.widget:swipeback:1.0.10'
-    implementation 'cn.simonlee.widget:autowraplayout:1.0.3'
+    implementation 'cn.simonlee.widget:swipeback:1.0.11'
+    implementation 'cn.simonlee.widget:autowraplayout:1.0.4'
 
     compileOnly 'com.android.support.constraint:constraint-layout:1.1.2'
 
     api project(':zbar')
-//    implementation 'cn.simonlee.xcodescanner:zbar:1.1.5'
+//    implementation 'cn.simonlee.xcodescanner:zbar:1.1.7'
 }
