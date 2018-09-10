@@ -154,7 +154,7 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
 
     @Override
     public void cameraBrightnessChanged(int brightness) {
-        if (brightness <= 40) {
+        if (brightness <= 50) {
             mButton_Flash.setVisibility(View.VISIBLE);
         } else if (!mCameraScanner.isFlashOpened()) {
             mButton_Flash.setVisibility(View.GONE);

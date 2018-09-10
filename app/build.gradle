@@ -7,8 +7,8 @@ android {
         applicationId "cn.simonlee.demo.xcodescanner"
         minSdkVersion 14
         targetSdkVersion 27
-        versionCode 17
-        versionName "1.1.7"
+        versionCode 18
+        versionName "1.1.8"
         ndk {
 //          此处可指定ABI，显著减小APK体积。不指定则默认编译所有平台so库
             abiFilters "armeabi-v7a"
@@ -32,5 +32,5 @@ dependencies {
     compileOnly 'com.android.support.constraint:constraint-layout:1.1.2'
 
     api project(':zbar')
-//    implementation 'cn.simonlee.xcodescanner:zbar:1.1.7'
+//    implementation 'cn.simonlee.xcodescanner:zbar:1.1.8'
 }

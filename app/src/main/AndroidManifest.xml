@@ -3,6 +3,7 @@
     package="cn.simonlee.demo.xcodescanner">
 
     <application
+        android:name=".APP"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/BaseActivityTheme.TransparentWindow">
