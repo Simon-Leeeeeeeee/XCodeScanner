@@ -86,6 +86,11 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
     private GraphicDecoder mGraphicDecoder;
 
     /**
+     * Surface列表
+     */
+    private List<Surface> mSurfaceList = new ArrayList<>();
+
+    /**
      * 设备方向 0 朝上 1朝左 2朝下 3朝右
      */
     private int mOrientation;
@@ -222,6 +227,18 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
+            if (mPreviewTexture != null) {
+                mPreviewTexture.release();
+                mPreviewTexture = null;
+            }
+            if (mTextureReader != null) {
+                mTextureReader.close();
+                mTextureReader = null;
+            }
+            for (Surface surface : mSurfaceList) {
+                surface.release();
+            }
+            mSurfaceList.clear();
             mPreviewBuilder = null;
             mCaptureSession = null;
             mCameraLock.release();
@@ -300,17 +317,9 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                 e.printStackTrace();
             }
         }
-        if (mPreviewTexture != null) {
-            mPreviewTexture.release();
-            mPreviewTexture = null;
-        }
         if (mGraphicDecoder != null) {
             mGraphicDecoder.detach();
             mGraphicDecoder = null;
-        }
-        if (mTextureReader != null) {
-            mTextureReader.close();
-            mTextureReader = null;
         }
         mCameraManager = null;
         mPreviewBuilder = null;
@@ -485,16 +494,16 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
     private void createCaptureSession() {
         try {
             mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            List<Surface> surfaceList = new ArrayList<>();
+            mSurfaceList.clear();
             Surface surface = new Surface(mPreviewTexture);
             mPreviewBuilder.addTarget(surface);//添加预览的Surface
-            surfaceList.add(surface);
+            mSurfaceList.add(surface);
             if (mTextureReader != null) {
                 Surface rendererSurface = new Surface(mTextureReader.getSurfaceTexture());
                 mPreviewBuilder.addTarget(rendererSurface);
-                surfaceList.add(rendererSurface);
+                mSurfaceList.add(rendererSurface);
             }
-            mCameraDevice.createCaptureSession(surfaceList, getSessionStateCallback(), mBackgroundHandler);//创建会话
+            mCameraDevice.createCaptureSession(mSurfaceList, getSessionStateCallback(), mBackgroundHandler);//创建会话
         } catch (CameraAccessException e) {//创建会话失败
             if (mCameraLock.availablePermits() < 1) {
                 mCameraLock.release();

@@ -36,14 +36,10 @@ public class Image {
     private long peer;
     private Object data;
 
-    static {
-        System.loadLibrary("zbarjni");
-        init();
-    }
-
     private static native void init();
 
     public Image() {
+        init();
         peer = create();
     }
 

@@ -127,19 +127,25 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
      * @param listener        解码监听
      * @param symbolTypeArray 指定条码类型进行识别，支持的格式EAN8、ISBN10、UPCA、EAN13、ISBN13、I25、UPCE、DATABAR、DATABAR_EXP、CODABAR、CODE39、PDF417、QRCODE、CODE93、CODE128，可根据实际需要进行配置。
      */
-    public ZBarDecoder(DecodeListener listener, int[] symbolTypeArray) {
+    public ZBarDecoder(DecodeListener listener, final int[] symbolTypeArray) {
         this.isDecodeEnabled = true;
         this.mDecodeListener = listener;
-        initZBar(symbolTypeArray);
         this.mHandler = new Handler(this);
         mArrayBlockingQueue = new ArrayBlockingQueue<>(5);//等待队列最多插入5条任务
         mExecutorService = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, mArrayBlockingQueue);
+        //ImageScanner的构造方法中含有System.loadLibrary()，要避免在主线程中进行IO操作
+        mExecutorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                initZBar(symbolTypeArray);
+            }
+        });
     }
 
     /**
      * 初始化ImageScanner&Image
      */
-    private void initZBar(int[] symbolTypeArray) {
+    private void initZBar(final int[] symbolTypeArray) {
         mImageScanner = new ImageScanner();
         setCodeTypes(symbolTypeArray);
         mZBarImage = new Image("Y800");
@@ -147,6 +153,9 @@ public class ZBarDecoder implements GraphicDecoder, Handler.Callback {
 
     @Override
     public void setCodeTypes(int[] symbolTypeArray) {
+        if (mImageScanner == null) {
+            return;
+        }
         mImageScanner.setConfig(0, Config.X_DENSITY, 3);
         mImageScanner.setConfig(0, Config.Y_DENSITY, 3);
         mImageScanner.setConfig(0, Config.ENABLE, 0);//Disable all the types

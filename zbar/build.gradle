@@ -8,8 +8,8 @@ android {
         minSdkVersion 14
         targetSdkVersion 27
         consumerProguardFiles 'proguard-rules.pro'
-        versionCode 17
-        versionName "1.1.7"
+        versionCode 18
+        versionName "1.1.8"
     }
 
     sourceSets {
