@@ -227,14 +227,6 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
-            if (mPreviewTexture != null) {
-                mPreviewTexture.release();
-                mPreviewTexture = null;
-            }
-            if (mTextureReader != null) {
-                mTextureReader.close();
-                mTextureReader = null;
-            }
             for (Surface surface : mSurfaceList) {
                 surface.release();
             }
@@ -309,24 +301,20 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
             mBackgroundHandler = null;
         }
         if (mBackgroundThread != null) {
-            mBackgroundThread.quitSafely();
-            try {
-                mBackgroundThread.join();
-                mBackgroundThread = null;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            mBackgroundThread.quit();
+        }
+        if (mPreviewTexture != null) {
+            mPreviewTexture.release();
+            mPreviewTexture = null;
+        }
+        if (mTextureReader != null) {
+            mTextureReader.close();
+            mTextureReader = null;
         }
         if (mGraphicDecoder != null) {
             mGraphicDecoder.detach();
             mGraphicDecoder = null;
         }
-        mCameraManager = null;
-        mPreviewBuilder = null;
-        mCameraListener = null;
-        mDeviceStateCallback = null;
-        mSessionStateCallback = null;
-        mOnImageAvailableListener = null;
     }
 
     @Override

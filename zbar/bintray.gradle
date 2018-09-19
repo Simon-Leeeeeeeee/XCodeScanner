@@ -11,7 +11,7 @@ if (localPropertiesFile.exists()) {
 
 def key_ProjectName = 'ZBar'//项目名称
 def key_ProjectDesc = 'A new frame for decode QR code and bar code on android.'//项目描述
-def key_ProjectVersion = '1.1.8'//项目版本
+def key_ProjectVersion = '1.1.9'//项目版本
 def key_ProjectVersionDesc = ''//版本描述
 
 /*读取字段*/

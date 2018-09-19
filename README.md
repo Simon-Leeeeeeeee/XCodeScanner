@@ -53,7 +53,7 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
-        implementation 'cn.simonlee.xcodescanner:zbar:1.1.8'
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.9'
     }
 ```
 
@@ -168,6 +168,10 @@
 *  增加二维码生成功能。
 
 ## 版本记录
+
+*  V1.1.9   `2018/09/19`
+   1. 修复在V1.1.8中`NewCameraScanner`关闭相机时提前释放`SurfaceTexture`的问题。
+   2. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.9`。
 
 *  V1.1.8   `2018/09/10`
    1. `ZBarDecoder`中在子线程实例化`ImageScanner`对象，避免在主线程中进行`System.loadLibrary()`。
