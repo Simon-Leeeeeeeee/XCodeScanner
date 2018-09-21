@@ -152,14 +152,28 @@ public class ScanActivity extends BaseActivity implements CameraScanner.CameraLi
         ToastHelper.showToast(this, "断开了连接", ToastHelper.LENGTH_SHORT);
     }
 
+    int mBrightnessCount = 0;
+
     @Override
     public void cameraBrightnessChanged(int brightness) {
         if (brightness <= 50) {
+            if (mBrightnessCount < 0) {
+                mBrightnessCount = 1;
+            } else {
+                mBrightnessCount++;
+            }
+        } else {
+            if (mBrightnessCount > 0) {
+                mBrightnessCount = -1;
+            } else {
+                mBrightnessCount--;
+            }
+        }
+        if (mBrightnessCount > 4) {//连续5帧亮度低于50，显示闪光灯开关
             mButton_Flash.setVisibility(View.VISIBLE);
-        } else if (!mCameraScanner.isFlashOpened()) {
+        } else if(mBrightnessCount < -4 && !mCameraScanner.isFlashOpened()){//连续5帧亮度不低于50，且闪光灯未开启，隐藏闪光灯开关
             mButton_Flash.setVisibility(View.GONE);
         }
-        Log.e(TAG, getClass().getName() + ".cameraBrightnessChanged() brightness = " + brightness);
     }
 
     int mCount = 0;

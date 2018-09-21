@@ -5,7 +5,7 @@ android {
     compileSdkVersion 27
     defaultConfig {
         applicationId "cn.simonlee.demo.xcodescanner"
-        minSdkVersion 14
+        minSdkVersion 19
         targetSdkVersion 27
         versionCode 19
         versionName "1.1.9"
@@ -26,11 +26,11 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:27.1.1'
 
-    implementation 'cn.simonlee.widget:swipeback:1.0.11'
-    implementation 'cn.simonlee.widget:autowraplayout:1.0.4'
+    implementation 'cn.simonlee.widget:swipeback:1.0.13'
+    implementation 'cn.simonlee.widget:autowraplayout:1.0.5'
 
     compileOnly 'com.android.support.constraint:constraint-layout:1.1.3'
 
-    api project(':zbar')
-//    implementation 'cn.simonlee.xcodescanner:zbar:1.1.8'
+//    implementation 'cn.simonlee.xcodescanner:zbar:1.1.9'
+    implementation project(':zbar')
 }

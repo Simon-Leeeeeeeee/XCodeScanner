@@ -53,7 +53,7 @@
 在module的`build.gradle`中添加如下代码
 ```
     dependencies {
-        implementation 'cn.simonlee.xcodescanner:zbar:1.1.9'
+        implementation 'cn.simonlee.xcodescanner:zbar:1.1.10'
     }
 ```
 
@@ -169,14 +169,19 @@
 
 ## 版本记录
 
+*  V1.1.10   `2018/09/21`
+   1. 修复`OldCameraScanner`中判断闪光灯状态时可能引起的空指针异常。
+   1. 亮度回馈由每20帧回调一次平均值改为每帧进行回调。
+   2. 依赖版本更新：`cn.simonlee.xcodescanner:zbar:1.1.10`。
+
 *  V1.1.9   `2018/09/19`
    1. 修复在V1.1.8中`NewCameraScanner`关闭相机时提前释放`SurfaceTexture`的问题。
-   2. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.9`。
+   2. 依赖版本更新：`cn.simonlee.xcodescanner:zbar:1.1.9`。
 
 *  V1.1.8   `2018/09/10`
    1. `ZBarDecoder`中在子线程实例化`ImageScanner`对象，避免在主线程中进行`System.loadLibrary()`。
    2. 修复`NewCameraScanner`中关闭相机时未释放`Surface`对象的问题。
-   5. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.8`。
+   5. 依赖版本更新：`cn.simonlee.xcodescanner:zbar:1.1.8`。
 
 *  V1.1.7   `2018/08/07`
    1. 修复armeabi架构无法识别二维码的问题。
@@ -189,14 +194,14 @@
    8. `CameraScanner`新增`enableBrightnessFeedback(boolean enable)`接口，设置是否开启亮度回馈。
    9. `CameraListener`新增`cameraBrightnessChanged(int brightness)`接口，对亮度变化进行回馈。
    10. 移除`BaseHandler`。
-   11. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.7`。
+   11. 依赖版本更新：`cn.simonlee.xcodescanner:zbar:1.1.7`。
 
 *  V1.1.6   `2018/05/08`
    1. `GraphicDecoder`增加本地图片识别接口。
    2. 废弃`GraphicDecoder.DecodeListener`中的`decodeSuccess`接口，改为`decodeComplete`。
    3. `CameraScanner`新增闪光灯控制接口。
    4. 解决`AdjustTextureView`尺寸变化导致图像显示异常的问题。
-   5. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.6`。
+   5. 依赖版本更新：`cn.simonlee.xcodescanner:zbar:1.1.6`。
 
 *  V1.1.5   `2018/05/01`
    1. 解决申请权限闪退的问题。
@@ -204,26 +209,26 @@
    3. 修改`ZBarDecoder`和`TextureReader`的实现方式，降低CPU占用。
    4. 新增`DebugZBarDecoder`，继承自`ZBarDecoder`,便于示例程序进行兼容性测试。
    5. 暂停/延时解码接口从`CameraScanner`迁移到`GraphicDecoder`，`CameraScanner`可能因为异步导致暂停后继续回调`decodeSuccess`接口。
-   6. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.5`。
+   6. 依赖版本更新：`cn.simonlee.xcodescanner:zbar:1.1.5`。
 
 *  V1.1.4   `2018/04/26`
    1. 解决Android4.2退出时闪退的问题。
    2. 解决某些低端机型可能预览严重丢帧的问题。
    3. 解决`OldCameraScanner`默认没有开启解码的问题。
-   4. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.4`。
+   4. 依赖版本更新：`cn.simonlee.xcodescanner:zbar:1.1.4`。
 
 *  V1.1.3   `2018/04/25`
    1. 解决部分x86设备闪退的问题。
    2. `CameraScanner`新增`stopDecode()`和`startDecode(int delay)`接口，可暂停/延时解码。
    3. ZBar包名由`com.simonlee.xcodescanner`变更为`cn.simonlee.xcodescanner`。
-   4. 发布开源库：`cn.simonlee.xcodescanner:zbar:1.1.3`，`codescanner`变更为`xcodescanner`，由此带来不便的敬请谅解。
+   4. 依赖版本更新：`cn.simonlee.xcodescanner:zbar:1.1.3`，`codescanner`变更为`xcodescanner`，由此带来不便的敬请谅解。
 
 *  V1.1.2   `2018/04/24`
    1. 解决`ZBarDecoder`中设置解码类型无效的问题。
 
 *  V1.1.1   `2018/04/16`
    1. `ScannerFrameView`增加高占比属性，可设置相对父容器高的占比。
-   2. 发布开源库：`cn.simonlee.codescanner:zbar:1.1.1`。
+   2. 依赖版本更新：`cn.simonlee.codescanner:zbar:1.1.1`。
 
 *  V1.1.0   `2018/04/16`
    1. 重写`ZBarDecoder`，解决单线程池可能引起的条码解析延迟问题。

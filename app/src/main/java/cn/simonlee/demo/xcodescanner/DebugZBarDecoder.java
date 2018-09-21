@@ -40,8 +40,9 @@ public class DebugZBarDecoder extends ZBarDecoder {
                 break;
             }
             case 1991: {
+                Log.d(TAG, getClass().getName() + ".handleMessage() 预览FPS：" + FPS_Preview + " , 解码FPS：" + FPS_Decode);
+                FPS_Preview = FPS_Decode = 0;
                 mHandler.sendEmptyMessageDelayed(1991, 1000);
-                Log.e(TAG, getClass().getName() + ".handleMessage() 预览FPS：" + FPS_Preview + " , 解码FPS：" + FPS_Decode);
                 break;
             }
         }

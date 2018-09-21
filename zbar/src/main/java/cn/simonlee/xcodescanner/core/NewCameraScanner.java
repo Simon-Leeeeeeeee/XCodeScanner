@@ -150,16 +150,6 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
      */
     private boolean isBrightnessFeedbackEnabled;
 
-    /**
-     * 亮度值计数（每20帧重置一次）
-     */
-    private int mBrightnessCount;
-
-    /**
-     * 累计亮度值（每20帧重置一次）
-     */
-    private int mBrightnessTotal;
-
     public NewCameraScanner(CameraListener cameraListener) {
         this.mCameraListener = cameraListener;
         this.mCurThreadHandler = new Handler(this);
@@ -341,7 +331,6 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
     @Override
     public void enableBrightnessFeedback(boolean enable) {
         this.isBrightnessFeedbackEnabled = enable;
-        this.mBrightnessTotal = mBrightnessCount = 0;
     }
 
     @Override
@@ -553,19 +542,21 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                         if (mClipRectRatio == null || mClipRectRatio.isEmpty()) {//当未设置图像识别剪裁时，应以View的大小进行设置，防止未显示的图像被误识别
                             setFrameRect(0, 0, mPreviewSize.getWidth(), mPreviewSize.getHeight());
                         }
-                        if (isBrightnessFeedbackEnabled && mCameraListener != null) {//启用亮度回馈
-                            //采集步长，总共采集900个像素点
-                            int step = Math.max(1, width * height / 900);
-                            for (int index = 0; index < width * height - 1; index += step) {
-                                mBrightnessTotal += frameData[index] & 0xff - 16;
-                                mBrightnessCount++;
-                            }
-                            //累计采集达到20帧，进行回调，并重置数据
-                            if (mBrightnessCount >= 900 * 20 && mCurThreadHandler != null) {
-                                mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_CHANGED_BRIGHTNESS));
-                            }
-                        }
                         mGraphicDecoder.decode(frameData, width, height, mClipRectRatio);
+                    }
+                    if (isBrightnessFeedbackEnabled && mCameraListener != null) {//启用亮度回馈
+                        //采集步长，总共采集100个像素点
+                        final int length = width * height;
+                        final int step = Math.max(1, length / 100);
+                        int brightnessTotal = 0;
+                        int brightnessCount = 0;
+                        for (int index = 0; index < length; index += step) {
+                            brightnessTotal += frameData[index] & 0xff - 16;
+                            brightnessCount++;
+                        }
+                        if (mCurThreadHandler != null) {
+                            mCurThreadHandler.sendMessage(mCurThreadHandler.obtainMessage(HANDLER_CHANGED_BRIGHTNESS, brightnessTotal, brightnessCount));
+                        }
                     }
                 }
             };
@@ -640,12 +631,9 @@ public class NewCameraScanner implements CameraScanner, Handler.Callback {
                 break;
             }
             case HANDLER_CHANGED_BRIGHTNESS: {//亮度变化
-                if (mCameraListener != null) {
-                    if (mBrightnessTotal != 0 && mBrightnessCount != 0) {
-                        mCameraListener.cameraBrightnessChanged(mBrightnessTotal / mBrightnessCount);
-                    }
+                if (mCameraListener != null && msg.arg2 != 0) {
+                    mCameraListener.cameraBrightnessChanged(msg.arg1 / msg.arg2);
                 }
-                mBrightnessTotal = mBrightnessCount = 0;
                 break;
             }
             case HANDLER_FAIL_OPEN://开启失败
